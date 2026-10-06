@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bernos_brand">#FF1F1A17</color>
-    <color name="bernos_accent">#FFE8B04B</color>
+    <!-- App-Icon: schlichtes Schwarz-Weiß. -->
+    <color name="ic_launcher_background">#FF111111</color>
+    <color name="ic_launcher_foreground">#FFFFFFFF</color>
 </resources>
