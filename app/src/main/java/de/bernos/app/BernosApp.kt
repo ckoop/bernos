@@ -15,10 +15,19 @@ class BernosApp : Application() {
     lateinit var controller: SonosController
         private set
 
+    private lateinit var mdns: MdnsDiscovery
+
     override fun onCreate() {
         super.onCreate()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         controller = SonosController(scope, SsdpDiscovery(MulticastLockHooks(this)))
+        mdns = MdnsDiscovery(this) { host -> controller.addHost(host) }
+    }
+
+    /** Sucht parallel per SSDP und mDNS; je nach Router funktioniert nur einer der beiden Wege. */
+    fun discover() {
+        controller.discover()
+        mdns.search()
     }
 
     /** Ohne Multicast-Lock verwirft Android die SSDP-Antworten der Lautsprecher. */

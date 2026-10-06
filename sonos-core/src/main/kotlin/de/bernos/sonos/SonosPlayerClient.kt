@@ -59,6 +59,37 @@ class SonosPlayerClient(private val soap: SoapClient) {
         groupRendering(coordinator, "SetGroupMute", "DesiredMute" to if (muted) "1" else "0")
     }
 
+    /** Lautstärke eines einzelnen Raums (0–100). */
+    suspend fun volume(device: SonosDevice): Int? =
+        rendering(device, "GetVolume", "Channel" to "Master")["CurrentVolume"]?.toIntOrNull()
+
+    suspend fun setVolume(device: SonosDevice, volume: Int) {
+        rendering(device, "SetVolume", "Channel" to "Master", "DesiredVolume" to volume.coerceIn(0, 100).toString())
+    }
+
+    /** Fügt [member] der Gruppe hinzu, deren Koordinator die UUID [coordinatorUuid] hat. */
+    suspend fun joinGroup(member: SonosDevice, coordinatorUuid: String) {
+        avTransport(member, "SetAVTransportURI", "CurrentURI" to "x-rincon:$coordinatorUuid", "CurrentURIMetaData" to "")
+    }
+
+    /** Löst [member] aus seiner Gruppe; er spielt danach allein (und zunächst nichts). */
+    suspend fun leaveGroup(member: SonosDevice) {
+        avTransport(member, "BecomeCoordinatorOfStandaloneGroup")
+    }
+
+    /**
+     * Übergibt die Wiedergabe der Gruppe an das Mitglied [newCoordinatorUuid]. Mit
+     * [rejoinGroup] = false verlässt der bisherige Koordinator danach die Gruppe.
+     */
+    suspend fun delegateCoordination(coordinator: SonosDevice, newCoordinatorUuid: String, rejoinGroup: Boolean) {
+        avTransport(
+            coordinator,
+            "DelegateGroupCoordinationTo",
+            "NewCoordinator" to newCoordinatorUuid,
+            "RejoinGroup" to if (rejoinGroup) "1" else "0",
+        )
+    }
+
     /** Raumaufteilung des gesamten Sonos-Systems; jeder Lautsprecher kann sie liefern. */
     suspend fun zoneGroups(anyDevice: SonosDevice): List<ZoneGroup> {
         val state = soap.call(anyDevice, SonosService.ZONE_GROUP_TOPOLOGY, "GetZoneGroupState")["ZoneGroupState"]
@@ -71,6 +102,9 @@ class SonosPlayerClient(private val soap: SoapClient) {
 
     private suspend fun groupRendering(device: SonosDevice, action: String, vararg args: Pair<String, String>) =
         soap.call(device, SonosService.GROUP_RENDERING_CONTROL, action, listOf("InstanceID" to "0") + args)
+
+    private suspend fun rendering(device: SonosDevice, action: String, vararg args: Pair<String, String>) =
+        soap.call(device, SonosService.RENDERING_CONTROL, action, listOf("InstanceID" to "0") + args)
 
     companion object {
         const val ERROR_TRANSITION_NOT_AVAILABLE = 701

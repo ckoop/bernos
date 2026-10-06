@@ -18,4 +18,11 @@
     <string name="cover">Albumcover</string>
     <string name="notification_channel">Wiedergabe</string>
     <string name="notification_channel_description">Steuerung der Sonos-Wiedergabe, auch für Uhr und Sperrbildschirm</string>
+    <string name="rooms_in_group">Räume in dieser Gruppe</string>
+    <string name="other_rooms">Weitere Räume</string>
+    <string name="controls_group">steuert</string>
+    <string name="add_room">Dazu</string>
+    <string name="remove_room">Entfernen</string>
+    <string name="move_here">Hierher</string>
+    <string name="speakers_count">%1$d Lautsprecher</string>
 </resources>

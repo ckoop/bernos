@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.bernos.app.ui.BernosActions
 import de.bernos.app.ui.BernosScreen
 import de.bernos.app.ui.BernosTheme
 
@@ -24,8 +25,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         requestNotificationPermission()
 
-        val controller = sonos
-        if (controller.state.value.groups.isEmpty()) controller.discover()
+        val app = application as BernosApp
+        val controller = app.controller
+        if (controller.state.value.groups.isEmpty()) app.discover()
+        val actions = object : BernosActions {
+            override fun refresh() = app.discover()
+            override fun addHost(host: String) = controller.addHost(host)
+            override fun selectGroup(groupId: String?) = controller.selectGroup(groupId)
+            override fun playPause() = controller.togglePlayPause()
+            override fun next() = controller.next()
+            override fun previous() = controller.previous()
+            override fun setVolume(volume: Int) = controller.setVolume(volume)
+            override fun setRoomVolume(roomUuid: String, volume: Int) = controller.setRoomVolume(roomUuid, volume)
+            override fun addRoom(roomUuid: String) = controller.addRoomToGroup(roomUuid)
+            override fun removeRoom(roomUuid: String) = controller.removeRoomFromGroup(roomUuid)
+            override fun moveTo(roomUuid: String) = controller.movePlaybackTo(roomUuid)
+        }
 
         setContent {
             BernosTheme {
@@ -34,16 +49,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(state.selectedGroupId) {
                     if (state.selectedGroupId != null) PlaybackService.start(this@MainActivity)
                 }
-                BernosScreen(
-                    state = state,
-                    onRefresh = controller::discover,
-                    onAddHost = controller::addHost,
-                    onSelectGroup = controller::selectGroup,
-                    onPlayPause = controller::togglePlayPause,
-                    onNext = controller::next,
-                    onPrevious = controller::previous,
-                    onVolumeChange = controller::setVolume,
-                )
+                BernosScreen(state, actions)
             }
         }
     }

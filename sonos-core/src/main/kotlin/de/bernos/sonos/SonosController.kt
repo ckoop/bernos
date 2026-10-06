@@ -24,6 +24,9 @@ data class SonosState(
     val error: String? = null,
 ) {
     val selectedGroup: ZoneGroup? get() = groups.firstOrNull { it.id == selectedGroupId }
+
+    /** Alle Räume des Systems, alphabetisch. */
+    val rooms: List<SonosDevice> get() = groups.flatMap { it.members }.sortedBy { it.roomName.lowercase() }
 }
 
 /**
@@ -35,6 +38,7 @@ class SonosController(
     private val discovery: SsdpDiscovery = SsdpDiscovery(),
     http: OkHttpClient = defaultHttpClient(),
     private val clock: () -> Long = System::currentTimeMillis,
+    private val groupingRetryDelayMs: Long = 500,
 ) {
     private val player = SonosPlayerClient(SoapClient(http))
     private val subscriber = GenaSubscriber(http)
@@ -78,12 +82,15 @@ class SonosController(
         }
     }
 
-    /** Lautsprecher per IP-Adresse hinzufügen, falls die automatische Suche im Netz blockiert ist. */
+    /**
+     * Lautsprecher per IP-Adresse hinzufügen, falls die automatische Suche im Netz blockiert ist.
+     * Optional mit Port, z. B. `192.168.1.20:1400`.
+     */
     fun addHost(host: String) {
         val trimmed = host.trim()
         if (trimmed.isEmpty()) return
-        synchronized(knownHosts) { knownHosts.add(trimmed) }
-        scope.launch { refreshTopology() }
+        val added = synchronized(knownHosts) { knownHosts.add(trimmed) }
+        if (added || _state.value.groups.isEmpty()) scope.launch { refreshTopology() }
     }
 
     fun selectGroup(groupId: String?) {
@@ -106,6 +113,63 @@ class SonosController(
 
     fun setMuted(muted: Boolean) = command { player.setGroupMute(it.coordinator, muted) }
 
+    /** Lautstärke eines einzelnen Raums der ausgewählten Gruppe. */
+    fun setRoomVolume(roomUuid: String, volume: Int) {
+        val clamped = volume.coerceIn(0, 100)
+        val device = findRoom(roomUuid) ?: return
+        _state.update { s ->
+            s.copy(nowPlaying = s.nowPlaying?.let { it.copy(memberVolumes = it.memberVolumes + (roomUuid to clamped)) })
+        }
+        command { player.setVolume(device, clamped) }
+    }
+
+    /** Nimmt einen weiteren Raum in die ausgewählte Gruppe auf; er spielt dann dasselbe. */
+    fun addRoomToGroup(roomUuid: String) {
+        val room = findRoom(roomUuid) ?: return
+        groupingCommand { group ->
+            if (group.members.any { it.uuid == roomUuid }) return@groupingCommand null
+            player.joinGroup(room, group.coordinator.uuid)
+            null
+        }
+    }
+
+    /** Nimmt einen Raum aus der ausgewählten Gruppe heraus. Der Raum, der die Gruppe steuert, bleibt drin. */
+    fun removeRoomFromGroup(roomUuid: String) {
+        val room = findRoom(roomUuid) ?: return
+        groupingCommand { group ->
+            if (group.coordinator.uuid == roomUuid) {
+                throw SonosException("${room.roomName} steuert die Gruppe. Verschiebe die Musik zuerst in einen anderen Raum.")
+            }
+            if (group.members.none { it.uuid == roomUuid }) return@groupingCommand null
+            player.leaveGroup(room)
+            null
+        }
+    }
+
+    /**
+     * Verschiebt die laufende Musik der ausgewählten Gruppe in den Raum [roomUuid]: Der Raum
+     * übernimmt die Wiedergabe, der bisher steuernde Raum verstummt. Die Auswahl folgt der Musik.
+     */
+    fun movePlaybackTo(roomUuid: String) {
+        val target = findRoom(roomUuid) ?: return
+        groupingCommand { group ->
+            if (group.coordinator.uuid == roomUuid) return@groupingCommand roomUuid
+            if (group.members.none { it.uuid == roomUuid }) player.joinGroup(target, group.coordinator.uuid)
+            // Der neue Raum braucht einen Moment, bis er als Gruppenmitglied gilt.
+            var attempt = 0
+            while (true) {
+                try {
+                    player.delegateCoordination(group.coordinator, roomUuid, rejoinGroup = false)
+                    break
+                } catch (e: SonosException) {
+                    if (++attempt >= GROUPING_RETRIES) throw e
+                    delay(groupingRetryDelayMs)
+                }
+            }
+            roomUuid
+        }
+    }
+
     /** Nimmt die Verfolgung der ausgewählten Gruppe wieder auf, falls sie mit [stopTracking] beendet wurde. */
     fun resumeTracking() {
         if (trackingJob == null && _state.value.selectedGroupId != null) startTracking()
@@ -122,6 +186,31 @@ class SonosController(
         subscriptions = emptyList()
         scope.launch(NonCancellable) { old.forEach { subscriber.unsubscribe(it) } }
         eventServer.stop()
+    }
+
+    private fun findRoom(uuid: String): SonosDevice? = _state.value.rooms.firstOrNull { it.uuid == uuid }
+
+    /**
+     * Führt eine Änderung der Raumaufteilung aus und lädt sie danach neu. [action] kann die
+     * UUID eines Raums zurückgeben, dessen Gruppe danach ausgewählt werden soll.
+     */
+    private fun groupingCommand(action: suspend (ZoneGroup) -> String?) {
+        val group = _state.value.selectedGroup ?: return
+        scope.launch {
+            var follow: String? = null
+            try {
+                follow = action(group)
+                _state.update { it.copy(error = null) }
+            } catch (e: SonosException) {
+                _state.update { it.copy(error = e.message) }
+            }
+            refreshTopology(preferredCoordinatorUuid = follow)
+            refreshNowPlaying()
+            // Sonos übernimmt Gruppenänderungen nicht immer sofort; einmal nachladen.
+            delay(TOPOLOGY_SETTLE_MS)
+            refreshTopology(preferredCoordinatorUuid = follow)
+            refreshNowPlaying()
+        }
     }
 
     private fun command(refreshAfter: Boolean = true, action: suspend (ZoneGroup) -> Unit) {
@@ -184,21 +273,24 @@ class SonosController(
         }
     }
 
-    private suspend fun refreshTopology() {
+    private suspend fun refreshTopology(preferredCoordinatorUuid: String? = null) {
         val hosts = synchronized(knownHosts) { knownHosts.toList() }
-        for (host in hosts) {
+        for (address in hosts) {
             val groups = try {
-                player.zoneGroups(SonosDevice(uuid = "", roomName = host, host = host))
+                player.zoneGroups(deviceForAddress(address))
             } catch (e: Exception) {
                 continue
             }
-            synchronized(knownHosts) { groups.flatMap { it.members }.forEach { knownHosts.add(it.host) } }
+            synchronized(knownHosts) { groups.flatMap { it.members }.forEach { knownHosts.add(addressOf(it)) } }
             val before = _state.value
-            val selected = before.selectedGroupId?.let { id -> groups.find { it.id == id } }
+            val selected = preferredCoordinatorUuid?.let { uuid -> groups.find { it.coordinator.uuid == uuid } }
+                ?: before.selectedGroupId?.let { id -> groups.find { it.id == id } }
                 // Nach dem Umgruppieren bekommt die Gruppe eine neue ID; dem bisherigen Koordinator folgen.
                 ?: before.selectedGroup?.let { old -> groups.find { g -> g.members.any { it.uuid == old.coordinator.uuid } } }
                 ?: groups.singleOrNull()
-            _state.update { it.copy(groups = groups, selectedGroupId = selected?.id, error = null) }
+            // Eine frühere "Keine Lautsprecher gefunden"-Meldung ist jetzt überholt, andere Fehler bleiben stehen.
+            val error = if (before.groups.isEmpty()) null else before.error
+            _state.update { it.copy(groups = groups, selectedGroupId = selected?.id, error = error) }
             if (selected?.coordinator?.uuid != before.selectedGroup?.coordinator?.uuid) {
                 _state.update { it.copy(nowPlaying = null) }
                 startTracking()
@@ -216,6 +308,13 @@ class SonosController(
                 val position = player.positionInfo(coordinator)
                 val volume = runCatching { player.groupVolume(coordinator) }.getOrNull()
                 val muted = runCatching { player.groupMute(coordinator) }.getOrNull()
+                val memberVolumes = if (group.members.size > 1) {
+                    group.members.mapNotNull { member ->
+                        runCatching { player.volume(member) }.getOrNull()?.let { member.uuid to it }
+                    }.toMap()
+                } else {
+                    volume?.let { mapOf(coordinator.uuid to it) } ?: emptyMap()
+                }
                 var track = position.track
                 if (track?.album == null) {
                     val source = runCatching { player.sourceTitle(coordinator) }.getOrNull()
@@ -232,6 +331,7 @@ class SonosController(
                     positionCapturedAtMs = clock(),
                     volume = volume,
                     muted = muted,
+                    memberVolumes = memberVolumes,
                 )
                 _state.update { if (it.selectedGroupId == group.id) it.copy(nowPlaying = nowPlaying) else it }
             } catch (e: SonosException) {
@@ -241,6 +341,8 @@ class SonosController(
     }
 
     companion object {
+        private const val GROUPING_RETRIES = 5
+        private const val TOPOLOGY_SETTLE_MS = 1_500L
         private const val POLL_WITH_EVENTS_MS = 15_000L
         private const val POLL_WITHOUT_EVENTS_MS = 3_000L
         private const val RENEW_INTERVAL_MS = (GenaSubscriber.DEFAULT_TIMEOUT_SECONDS * 1000L) / 2
@@ -249,5 +351,15 @@ class SonosController(
             .connectTimeout(3, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .build()
+
+        /** "host" oder "host:port" → Gerät mit Platzhalter-UUID, nur zum Abfragen der Raumaufteilung. */
+        internal fun deviceForAddress(address: String): SonosDevice {
+            val host = address.substringBeforeLast(':', address)
+            val port = address.substringAfterLast(':', "").toIntOrNull() ?: SonosDevice.DEFAULT_PORT
+            return SonosDevice(uuid = "", roomName = host, host = host, port = port)
+        }
+
+        internal fun addressOf(device: SonosDevice): String =
+            if (device.port == SonosDevice.DEFAULT_PORT) device.host else "${device.host}:${device.port}"
     }
 }

@@ -36,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,24 +60,31 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import de.bernos.app.R
 import de.bernos.sonos.NowPlaying
+import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
 import de.bernos.sonos.ZoneGroup
 import kotlinx.coroutines.delay
 
+/** Alles, was die Oberfläche auslösen kann. */
+interface BernosActions {
+    fun refresh()
+    fun addHost(host: String)
+    fun selectGroup(groupId: String?)
+    fun playPause()
+    fun next()
+    fun previous()
+    fun setVolume(volume: Int)
+    fun setRoomVolume(roomUuid: String, volume: Int)
+    fun addRoom(roomUuid: String)
+    fun removeRoom(roomUuid: String)
+    fun moveTo(roomUuid: String)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BernosScreen(
-    state: SonosState,
-    onRefresh: () -> Unit,
-    onAddHost: (String) -> Unit,
-    onSelectGroup: (String?) -> Unit,
-    onPlayPause: () -> Unit,
-    onNext: () -> Unit,
-    onPrevious: () -> Unit,
-    onVolumeChange: (Int) -> Unit,
-) {
+fun BernosScreen(state: SonosState, actions: BernosActions) {
     val selected = state.selectedGroup
-    BackHandler(enabled = selected != null) { onSelectGroup(null) }
+    BackHandler(enabled = selected != null) { actions.selectGroup(null) }
 
     Scaffold(
         topBar = {
@@ -84,14 +92,14 @@ fun BernosScreen(
                 title = { Text(selected?.name ?: stringResource(R.string.app_name), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     if (selected != null) {
-                        IconButton(onClick = { onSelectGroup(null) }) {
+                        IconButton(onClick = { actions.selectGroup(null) }) {
                             Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = stringResource(R.string.back))
                         }
                     }
                 },
                 actions = {
                     if (selected == null) {
-                        IconButton(onClick = onRefresh, enabled = !state.discovering) {
+                        IconButton(onClick = actions::refresh, enabled = !state.discovering) {
                             Icon(painterResource(R.drawable.ic_refresh), contentDescription = stringResource(R.string.refresh))
                         }
                     }
@@ -112,9 +120,9 @@ fun BernosScreen(
                 )
             }
             if (selected == null) {
-                RoomList(state, onSelectGroup, onAddHost)
+                RoomList(state, actions::selectGroup, actions::addHost)
             } else {
-                NowPlayingView(selected, state.nowPlaying, onPlayPause, onNext, onPrevious, onVolumeChange)
+                NowPlayingView(selected, state.rooms, state.nowPlaying, actions)
             }
         }
     }
@@ -128,7 +136,7 @@ private fun RoomList(state: SonosState, onSelectGroup: (String) -> Unit, onAddHo
                 ListItem(
                     headlineContent = { Text(group.name) },
                     supportingContent = {
-                        if (group.members.size > 1) Text("${group.members.size} Lautsprecher")
+                        if (group.members.size > 1) Text(stringResource(R.string.speakers_count, group.members.size))
                     },
                     leadingContent = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = null) },
                     modifier = Modifier.clickable { onSelectGroup(group.id) },
@@ -181,11 +189,9 @@ private fun ManualHostForm(onAddHost: (String) -> Unit) {
 @Composable
 private fun NowPlayingView(
     group: ZoneGroup,
+    allRooms: List<SonosDevice>,
     nowPlaying: NowPlaying?,
-    onPlayPause: () -> Unit,
-    onNext: () -> Unit,
-    onPrevious: () -> Unit,
-    onVolumeChange: (Int) -> Unit,
+    actions: BernosActions,
 ) {
     val track = nowPlaying?.track
     Column(
@@ -221,12 +227,12 @@ private fun NowPlayingView(
         Spacer(Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            IconButton(onClick = onPrevious, modifier = Modifier.size(56.dp)) {
+            IconButton(onClick = actions::previous, modifier = Modifier.size(56.dp)) {
                 Icon(painterResource(R.drawable.ic_skip_previous), stringResource(R.string.previous), Modifier.size(36.dp))
             }
             val playing = nowPlaying?.isPlaying == true
             FilledIconButton(
-                onClick = onPlayPause,
+                onClick = actions::playPause,
                 modifier = Modifier.size(72.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(),
             ) {
@@ -236,14 +242,73 @@ private fun NowPlayingView(
                     Modifier.size(40.dp),
                 )
             }
-            IconButton(onClick = onNext, modifier = Modifier.size(56.dp)) {
+            IconButton(onClick = actions::next, modifier = Modifier.size(56.dp)) {
                 Icon(painterResource(R.drawable.ic_skip_next), stringResource(R.string.next), Modifier.size(36.dp))
             }
         }
         Spacer(Modifier.height(16.dp))
 
-        nowPlaying?.volume?.let { volume -> VolumeSlider(group.id, volume, onVolumeChange) }
+        nowPlaying?.volume?.let { volume -> VolumeSlider(group.id, volume, actions::setVolume) }
+        Spacer(Modifier.height(24.dp))
+
+        RoomsSection(group, allRooms, nowPlaying, actions)
     }
+}
+
+/** Räume der Gruppe mit eigener Lautstärke sowie weitere Räume zum Dazunehmen oder Hinverschieben. */
+@Composable
+private fun RoomsSection(group: ZoneGroup, allRooms: List<SonosDevice>, nowPlaying: NowPlaying?, actions: BernosActions) {
+    val memberIds = group.members.map { it.uuid }.toSet()
+    val others = allRooms.filter { it.uuid !in memberIds }
+
+    Column(Modifier.fillMaxWidth()) {
+        if (group.members.size > 1) {
+            SectionTitle(stringResource(R.string.rooms_in_group))
+            group.members.forEach { member ->
+                val isCoordinator = member.uuid == group.coordinator.uuid
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(member.roomName, style = MaterialTheme.typography.bodyLarge)
+                        if (isCoordinator) {
+                            Text(
+                                stringResource(R.string.controls_group),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    if (!isCoordinator) {
+                        TextButton(onClick = { actions.removeRoom(member.uuid) }) { Text(stringResource(R.string.remove_room)) }
+                    }
+                }
+                nowPlaying?.memberVolumes?.get(member.uuid)?.let { volume ->
+                    VolumeSlider(member.uuid, volume) { actions.setRoomVolume(member.uuid, it) }
+                }
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            }
+        }
+
+        if (others.isNotEmpty()) {
+            SectionTitle(stringResource(R.string.other_rooms))
+            others.forEach { room ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(room.roomName, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { actions.addRoom(room.uuid) }) { Text(stringResource(R.string.add_room)) }
+                    TextButton(onClick = { actions.moveTo(room.uuid) }) { Text(stringResource(R.string.move_here)) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+    )
 }
 
 @Composable
@@ -277,7 +342,9 @@ private fun Progress(nowPlaying: NowPlaying?) {
     val duration = nowPlaying?.durationMs ?: return
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(nowPlaying) {
-        while (true) {
+        now = System.currentTimeMillis()
+        // Nur während der Wiedergabe weiterzählen.
+        while (nowPlaying.isPlaying) {
             now = System.currentTimeMillis()
             delay(500)
         }

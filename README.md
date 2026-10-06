@@ -3,11 +3,13 @@
 Bernos ist eine Android-App zur Steuerung von Sonos-Lautsprechern, mit Wear-OS-Uhr als
 Fernbedienung. Bernos ist ein privates Projekt und steht in keiner Verbindung zu Sonos, Inc.
 
-## Stand: Phase 1
+## Stand: Phase 2
 
-- Findet die Sonos-Lautsprecher im WLAN automatisch (SSDP); falls der Router das blockiert,
+- Findet die Sonos-Lautsprecher im WLAN automatisch (SSDP und mDNS); falls der Router das blockiert,
   lässt sich ein Lautsprecher per IP-Adresse hinzufügen.
 - Zeigt alle Räume bzw. Gruppen an.
+- **Räume gruppieren:** weitere Räume dazunehmen oder herausnehmen, Lautstärke pro Raum.
+- **Musik verschieben:** die laufende Musik mit einem Tipp in einen anderen Raum schicken.
 - Zeigt für den gewählten Raum Titel, Künstler, Album und **Albumcover** an, inkl. Fortschritt.
 - Abspielen/Pause, nächster/vorheriger Titel, Lautstärke der Gruppe.
 - Live-Aktualisierung: Die Lautsprecher melden Änderungen von selbst (UPnP-Ereignisse);
@@ -35,6 +37,7 @@ Voraussetzungen: JDK 17 und das Android SDK (z. B. über Android Studio).
 
 ```sh
 ./gradlew :sonos-core:test        # Tests des Sonos-Kerns
+./gradlew :app:testDebugUnitTest  # Oberflächentests (Robolectric)
 ./gradlew :app:assembleDebug      # APK unter app/build/outputs/apk/debug/
 ```
 

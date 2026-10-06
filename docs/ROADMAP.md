@@ -4,12 +4,15 @@
 Lautsprecher finden, Wiedergabe steuern, Titel und Cover anzeigen, Live-Updates,
 Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wear OS).
 
-## Phase 2 – Räume und Gruppen
-- Gruppen bilden und auflösen (`SetAVTransportURI` mit `x-rincon:<Koordinator-UUID>`,
-  `BecomeCoordinatorOfStandaloneGroup`).
-- Wiedergabe in einen anderen Raum verschieben.
-- Lautstärke pro Raum (RenderingControl je Mitglied) zusätzlich zur Gruppenlautstärke.
-- Suche zusätzlich per mDNS (`_sonos._tcp`) als zweiter Weg neben SSDP.
+## Phase 2 – Räume und Gruppen ✅
+- Räume zur Gruppe hinzufügen (`SetAVTransportURI` mit `x-rincon:<Koordinator-UUID>`) und
+  wieder entfernen (`BecomeCoordinatorOfStandaloneGroup`).
+- Musik in einen anderen Raum verschieben: Zielraum tritt der Gruppe bei, übernimmt per
+  `DelegateGroupCoordinationTo` die Steuerung, der bisherige Raum verlässt die Gruppe.
+- Lautstärke pro Raum (RenderingControl) zusätzlich zur Gruppenlautstärke.
+- Suche zusätzlich per mDNS (`_sonos._tcp`) neben SSDP.
+- Tests: simuliertes Sonos-System mit drei Räumen für den Controller, Oberflächentests mit
+  Robolectric.
 
 ## Phase 3 – Eigene Wear-OS-App
 - Modul `wear` mit Compose for Wear OS.

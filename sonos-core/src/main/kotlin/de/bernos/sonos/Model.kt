@@ -67,6 +67,8 @@ data class NowPlaying(
     val positionCapturedAtMs: Long,
     val volume: Int?,
     val muted: Boolean?,
+    /** Lautstärke der einzelnen Räume der Gruppe, nach UUID. */
+    val memberVolumes: Map<String, Int> = emptyMap(),
 ) {
     val isPlaying: Boolean get() = transportState == TransportState.PLAYING
 
