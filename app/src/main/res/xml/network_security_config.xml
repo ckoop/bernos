@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sonos-Lautsprecher sprechen im lokalen Netz nur unverschlüsseltes HTTP (Port 1400). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

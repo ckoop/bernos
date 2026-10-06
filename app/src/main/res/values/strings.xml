@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bernos</string>
+    <string name="rooms">Räume</string>
+    <string name="refresh">Erneut suchen</string>
+    <string name="back">Zurück</string>
+    <string name="searching">Suche Sonos-Lautsprecher …</string>
+    <string name="no_speakers">Keine Lautsprecher gefunden.</string>
+    <string name="manual_ip">IP-Adresse eines Lautsprechers</string>
+    <string name="add">Hinzufügen</string>
+    <string name="nothing_playing">Nichts wird abgespielt</string>
+    <string name="play">Abspielen</string>
+    <string name="pause">Pause</string>
+    <string name="next">Nächster Titel</string>
+    <string name="previous">Vorheriger Titel</string>
+    <string name="stop_control">Beenden</string>
+    <string name="volume">Lautstärke</string>
+    <string name="cover">Albumcover</string>
+    <string name="notification_channel">Wiedergabe</string>
+    <string name="notification_channel_description">Steuerung der Sonos-Wiedergabe, auch für Uhr und Sperrbildschirm</string>
+</resources>

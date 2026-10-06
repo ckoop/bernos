@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Stilisierter Lautsprecher mit "B" im sicheren Bereich (66dp) des adaptiven Icons. -->
+    <path
+        android:fillColor="@color/bernos_accent"
+        android:pathData="M54,30a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z" />
+    <path
+        android:fillColor="@color/bernos_brand"
+        android:pathData="M46,40h10c5,0 8,2.6 8,6.6c0,2.6 -1.4,4.4 -3.6,5.2c2.9,0.7 4.8,2.9 4.8,5.9c0,4.4 -3.4,7.3 -8.8,7.3H46zM51,44.2v6.2h4.6c2.3,0 3.6,-1.1 3.6,-3.1s-1.3,-3.1 -3.6,-3.1zM51,54.4v6.4h5.2c2.5,0 3.9,-1.2 3.9,-3.2s-1.4,-3.2 -3.9,-3.2z" />
+</vector>
