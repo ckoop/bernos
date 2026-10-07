@@ -11,7 +11,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.bernos.wear.BuildConfig
@@ -46,6 +48,7 @@ class BernosWearTest {
         override fun next() { calls += "next" }
         override fun previous() { calls += "previous" }
         override fun setVolume(volume: Int) { calls += "volume:$volume" }
+        override fun setMuted(muted: Boolean) { calls += "muted:$muted" }
         override fun moveTo(roomUuid: String) { calls += "move:$roomUuid" }
         override fun playFavorite(favoriteId: String) { calls += "favorite:$favoriteId" }
         override fun refresh() { calls += "refresh" }
@@ -182,6 +185,31 @@ class BernosWearTest {
 
         compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("version"))
         compose.onNodeWithText("Bernos ${BuildConfig.VERSION_NAME}").assertIsDisplayed()
+    }
+
+    @Test
+    fun `langes Druecken auf Abspielen schaltet stumm`() {
+        val actions = RecordingActions()
+        val laut = WatchState(groups = groups, selectedGroupId = "G1", title = "Song", isPlaying = true, volume = 30)
+        compose.setContent { BernosWear(laut, null, PhoneConnection.CONNECTED, actions) }
+
+        compose.onNodeWithTag("stumm").assertDoesNotExist()
+        compose.onNodeWithTag("abspielen").performTouchInput { longClick() }
+
+        assertEquals(listOf("muted:true"), actions.calls)
+    }
+
+    @Test
+    fun `stumm zeigt Zeichen und hebt per langem Druecken auf`() {
+        val actions = RecordingActions()
+        val stumm = WatchState(groups = groups, selectedGroupId = "G1", title = "Song", isPlaying = true, volume = 30, muted = true)
+        compose.setContent { BernosWear(stumm, null, PhoneConnection.CONNECTED, actions) }
+
+        compose.onNodeWithTag("stumm", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription("Stumm, Lautstärke 30").assertExists()
+        compose.onNodeWithTag("abspielen").performTouchInput { longClick() }
+
+        assertEquals(listOf("muted:false"), actions.calls)
     }
 
     @Test

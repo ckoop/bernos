@@ -35,6 +35,7 @@ class WearCommandService : WearableListenerService() {
             WatchCommand.Next -> controller.next()
             WatchCommand.Previous -> controller.previous()
             is WatchCommand.SetVolume -> controller.setVolume(command.volume)
+            is WatchCommand.SetMuted -> controller.setMuted(command.muted)
             is WatchCommand.MoveTo -> controller.movePlaybackTo(command.roomUuid)
             is WatchCommand.PlayFavorite -> controller.playFavorite(command.favoriteId)
         }

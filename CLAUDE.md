@@ -126,7 +126,9 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
 - Suchwege geprüft (07.10.2026, 0.4.4): SSDP und mDNS finden beim Nutzer beide alle 4
   Lautsprecher (im allerersten Lauf nach der Installation nur 1 per SSDP, 0 per mDNS – die
   doppelte Suche fängt das ab). Protokoll: `adb logcat -s BernosSuche`.
-- Stummschalten ✅ (0.4.4): Lautsprecher-Symbol neben der Gruppenlautstärke auf dem Handy.
+- Stummschalten ✅ (0.4.4/0.4.5): Handy über das Lautsprecher-Symbol neben der Gruppenlautstärke;
+  Uhr über langes Drücken auf Abspielen (Vibration, rote Lautstärkeanzeige, Stumm-Zeichen am
+  Knopf; Protokoll Version 4 mit `muted` und `SetMuted`).
 - Phase 4 ✅ Sonos-Favoriten (07.10.2026, Version 0.4.3): Browse `FV:2`, Sender direkt,
   Playlists/Alben über die Warteschlange – beides an echten Geräten bestätigt (TuneIn-Sender,
   Spotify-Playlist). Handy: Reihe "Favoriten"; Uhr: Stern-Knopf neben dem Raum (unten war auf

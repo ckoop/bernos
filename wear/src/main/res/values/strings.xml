@@ -19,6 +19,9 @@
     <string name="control_room">Raum steuern</string>
     <string name="move_music_here">Musik hierher verschieben</string>
     <string name="volume_percent">Lautstärke %1$d</string>
+    <string name="volume_muted">Stumm, Lautstärke %1$d</string>
+    <string name="mute">Stummschalten</string>
+    <string name="unmute">Stummschaltung aufheben</string>
     <string name="version">Bernos %1$s</string>
     <string name="tile_no_room">Kein Raum gewählt</string>
     <string name="open_app">Öffnen</string>

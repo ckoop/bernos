@@ -29,8 +29,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,6 +55,7 @@ import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconButton
 import androidx.wear.compose.material3.IconButtonDefaults
 import androidx.wear.compose.material3.LevelIndicator
+import androidx.wear.compose.material3.LevelIndicatorDefaults
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
@@ -71,6 +74,7 @@ interface WearActions {
     fun next()
     fun previous()
     fun setVolume(volume: Int)
+    fun setMuted(muted: Boolean)
     fun moveTo(roomUuid: String)
     fun playFavorite(favoriteId: String)
     fun refresh()
@@ -285,6 +289,7 @@ private fun PlayerScreen(
     var lastLocalChange by remember { mutableLongStateOf(0L) }
     var rotaryPixels by remember { mutableFloatStateOf(0f) }
     val focusRequester = remember { FocusRequester() }
+    val haptics = LocalHapticFeedback.current
 
     // Werte vom Handy übernehmen, außer während an der Lünette gedreht wird.
     LaunchedEffect(state.volume) {
@@ -316,10 +321,16 @@ private fun PlayerScreen(
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)))
             }
             if (state.volume != null) {
-                val description = stringResource(R.string.volume_percent, volume)
+                val description = stringResource(if (state.muted) R.string.volume_muted else R.string.volume_percent, volume)
                 LevelIndicator(
                     value = { volume / 100f },
                     modifier = Modifier.align(Alignment.CenterStart).semantics { contentDescription = description },
+                    // Stumm: Anzeige in Rot, wie das Symbol auf dem Handy.
+                    colors = if (state.muted) {
+                        LevelIndicatorDefaults.colors(indicatorColor = MaterialTheme.colorScheme.error)
+                    } else {
+                        LevelIndicatorDefaults.colors()
+                    },
                 )
             }
             Column(
@@ -372,12 +383,30 @@ private fun PlayerScreen(
                     IconButton(onClick = actions::previous) {
                         Icon(painterResource(R.drawable.ic_skip_previous), stringResource(R.string.previous))
                     }
-                    FilledIconButton(onClick = actions::playPause, modifier = Modifier.size(IconButtonDefaults.LargeButtonSize)) {
+                    // Langes Drücken schaltet stumm bzw. hebt die Stummschaltung auf.
+                    FilledIconButton(
+                        onClick = actions::playPause,
+                        onLongClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            actions.setMuted(!state.muted)
+                        },
+                        onLongClickLabel = stringResource(if (state.muted) R.string.unmute else R.string.mute),
+                        modifier = Modifier.size(IconButtonDefaults.LargeButtonSize).testTag("abspielen"),
+                    ) {
                         Icon(
                             painterResource(if (state.isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
                             stringResource(if (state.isPlaying) R.string.pause else R.string.play),
                             modifier = Modifier.size(IconButtonDefaults.LargeIconSize),
                         )
+                        if (state.muted) {
+                            // Kleines Stumm-Zeichen in der Ecke des Knopfs.
+                            Icon(
+                                painterResource(R.drawable.ic_volume_off),
+                                contentDescription = null,
+                                modifier = Modifier.align(Alignment.BottomEnd).size(16.dp).testTag("stumm"),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                     IconButton(onClick = actions::next) {
                         Icon(painterResource(R.drawable.ic_skip_next), stringResource(R.string.next))

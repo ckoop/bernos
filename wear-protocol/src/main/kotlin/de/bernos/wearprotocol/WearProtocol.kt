@@ -22,7 +22,7 @@ object WearProtocol {
     const val PHONE_CAPABILITY = "bernos_phone"
 
     /** Format-Version; bei inkompatiblen Änderungen erhöhen. */
-    const val VERSION = 3
+    const val VERSION = 4
 }
 
 /** Ein Raum bzw. eine Gruppe, wie die Uhr sie in der Liste zeigt. */
@@ -55,6 +55,7 @@ data class WatchState(
     val coverUrl: String? = null,
     val isPlaying: Boolean = false,
     val volume: Int? = null,
+    val muted: Boolean = false,
     val discovering: Boolean = false,
     val error: String? = null,
     /** Räume, in die sich die Musik der gewählten Gruppe verschieben lässt (ohne den steuernden Raum). */
@@ -79,6 +80,7 @@ data class WatchState(
         out.writeNullable(coverUrl)
         out.writeBoolean(isPlaying)
         out.writeInt(volume ?: -1)
+        out.writeBoolean(muted)
         out.writeBoolean(discovering)
         out.writeNullable(error)
         out.writeInt(moveTargets.size)
@@ -109,6 +111,7 @@ data class WatchState(
                 coverUrl = input.readNullable(),
                 isPlaying = input.readBoolean(),
                 volume = input.readInt().takeIf { it >= 0 },
+                muted = input.readBoolean(),
                 discovering = input.readBoolean(),
                 error = input.readNullable(),
                 moveTargets = List(input.readInt()) { WatchRoom(uuid = input.readUTF(), name = input.readUTF()) },
@@ -128,6 +131,7 @@ sealed interface WatchCommand {
     data object Next : WatchCommand
     data object Previous : WatchCommand
     data class SetVolume(val volume: Int) : WatchCommand
+    data class SetMuted(val muted: Boolean) : WatchCommand
     /** Laufende Musik der gewählten Gruppe in diesen Raum verschieben; der bisherige Raum verstummt. */
     data class MoveTo(val roomUuid: String) : WatchCommand
     /** Favoriten in der gewählten Gruppe abspielen. */
@@ -148,6 +152,10 @@ sealed interface WatchCommand {
             is SetVolume -> {
                 out.writeUTF("volume")
                 out.writeInt(volume)
+            }
+            is SetMuted -> {
+                out.writeUTF("mute")
+                out.writeBoolean(muted)
             }
             is MoveTo -> {
                 out.writeUTF("move")
@@ -172,6 +180,7 @@ sealed interface WatchCommand {
                 "next" -> Next
                 "previous" -> Previous
                 "volume" -> SetVolume(input.readInt().coerceIn(0, 100))
+                "mute" -> SetMuted(input.readBoolean())
                 "move" -> MoveTo(input.readUTF())
                 "favorite" -> PlayFavorite(input.readUTF())
                 else -> null

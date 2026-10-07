@@ -33,7 +33,8 @@ Nähe sein; es spricht mit Sonos, die Uhr nur mit dem Handy):
 - **Raumliste:** Raum zum Steuern wählen; laufende Räume sind markiert.
 - **Musik hierher verschieben:** laufende Musik in einen anderen Raum schicken.
 - **Wiedergabe:** Cover bzw. Senderlogo als Hintergrund, Titel, Künstler,
-  Zurück/Abspielen/Weiter, **Lautstärke über die Lünette** bzw. Drehkrone.
+  Zurück/Abspielen/Weiter, **Lautstärke über die Lünette** bzw. Drehkrone, **Stummschalten**
+  durch langes Drücken auf Abspielen.
 - **Kachel** neben dem Zifferblatt: Bernos, Raum, Titel mit Cover im Hintergrund und
   Steuerknöpfe – ohne die App zu öffnen.
 - **Komplikation** fürs Zifferblatt (kurzer oder langer Text) mit dem laufenden Titel.

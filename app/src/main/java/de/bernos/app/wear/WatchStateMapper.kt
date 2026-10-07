@@ -20,6 +20,7 @@ internal fun SonosState.toWatchState(): WatchState {
         coverUrl = selectedPlaying?.track?.albumArtUrl,
         isPlaying = selectedPlaying?.isPlaying == true,
         volume = selectedPlaying?.volume,
+        muted = selectedPlaying?.muted == true,
         discovering = discovering,
         error = error,
         moveTargets = selectedGroup?.let { group ->

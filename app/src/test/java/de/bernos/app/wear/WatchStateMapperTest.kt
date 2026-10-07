@@ -35,7 +35,7 @@ class WatchStateMapperTest {
                 positionMs = null,
                 positionCapturedAtMs = 0,
                 volume = 23,
-                muted = false,
+                muted = true,
             ),
         )
 
@@ -50,6 +50,7 @@ class WatchStateMapperTest {
         assertEquals("https://cdn.example.org/logo.png", watch.coverUrl)
         assertTrue(watch.isPlaying)
         assertEquals(23, watch.volume)
+        assertTrue(watch.muted)
         // Alle Räume außer dem steuernden, auch Mitglieder der eigenen Gruppe.
         assertEquals(listOf("Bad", "Küche"), watch.moveTargets.map { it.name })
     }

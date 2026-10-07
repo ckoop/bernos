@@ -100,6 +100,7 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
         // Sofort anzeigen, das Handy bestätigt kurz darauf.
         when (command) {
             WatchCommand.PlayPause -> _state.update { it?.copy(isPlaying = !it.isPlaying) }
+            is WatchCommand.SetMuted -> _state.update { it?.copy(muted = command.muted) }
             is WatchCommand.SetVolume -> {
                 _state.update { it?.copy(volume = command.volume) }
                 pendingVolume.value = command.volume

@@ -20,6 +20,7 @@ class WearProtocolTest {
             coverUrl = "https://cdn.example.org/logo.png",
             isPlaying = true,
             volume = 23,
+            muted = true,
             error = "Bei dieser Quelle nicht möglich",
             moveTargets = listOf(WatchRoom("RINCON_2", "Küche"), WatchRoom("RINCON_3", "Bad")),
             favorites = listOf(WatchFavorite("FV:2/3", "STAR FM Maximum Rock Berlin")),
@@ -46,6 +47,8 @@ class WearProtocolTest {
             WatchCommand.Next,
             WatchCommand.Previous,
             WatchCommand.SetVolume(42),
+            WatchCommand.SetMuted(true),
+            WatchCommand.SetMuted(false),
             WatchCommand.MoveTo("RINCON_3"),
             WatchCommand.PlayFavorite("FV:2/3"),
         )
