@@ -179,8 +179,8 @@ class BernosWearTest {
         assertTrue(stern.bottom <= abspielen.top && abspielen.bottom <= raum.top)
         listOf(stern, raum).forEach { assertEquals(center.value, ((it.left + it.right) / 2).value, 1f) }
         // Alle Ecken innerhalb des Kreises, sonst schneidet der runde Rand sie ab. Robolectric misst Text
-        // viel zu schmal, daher den Raumknopf mit seiner Höchstbreite von 120 dp ansetzen.
-        val raumBreit = raum.copy(left = center - 60.dp, right = center + 60.dp)
+        // viel zu schmal, daher den Raumknopf mit seiner Höchstbreite von 150 dp ansetzen.
+        val raumBreit = raum.copy(left = center - 75.dp, right = center + 75.dp)
         listOf(stern, raumBreit, abspielen).forEach { box ->
             listOf(box.left to box.top, box.right to box.top, box.left to box.bottom, box.right to box.bottom).forEach { (x, y) ->
                 val dx = (x - center).value

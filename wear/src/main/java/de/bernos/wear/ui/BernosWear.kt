@@ -496,7 +496,7 @@ private fun PlayerScreen(
                 }
                 CompactButton(
                     onClick = onOpenRooms,
-                    modifier = Modifier.widthIn(max = 120.dp).testTag("raum"),
+                    modifier = Modifier.widthIn(max = 150.dp).testTag("raum"),
                     colors = ButtonDefaults.filledTonalButtonColors(),
                     icon = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = stringResource(R.string.choose_room)) },
                     label = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
