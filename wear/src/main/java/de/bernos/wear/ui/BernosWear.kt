@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -384,28 +386,40 @@ private fun PlayerScreen(
                         Icon(painterResource(R.drawable.ic_skip_previous), stringResource(R.string.previous))
                     }
                     // Langes Drücken schaltet stumm bzw. hebt die Stummschaltung auf.
-                    FilledIconButton(
-                        onClick = actions::playPause,
-                        onLongClick = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            actions.setMuted(!state.muted)
-                        },
-                        onLongClickLabel = stringResource(if (state.muted) R.string.unmute else R.string.mute),
-                        modifier = Modifier.size(IconButtonDefaults.LargeButtonSize).testTag("abspielen"),
-                    ) {
-                        Icon(
-                            painterResource(if (state.isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
-                            stringResource(if (state.isPlaying) R.string.pause else R.string.play),
-                            modifier = Modifier.size(IconButtonDefaults.LargeIconSize),
-                        )
-                        if (state.muted) {
-                            // Kleines Stumm-Zeichen in der Ecke des Knopfs.
+                    Box(contentAlignment = Alignment.Center) {
+                        FilledIconButton(
+                            onClick = actions::playPause,
+                            onLongClick = {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                actions.setMuted(!state.muted)
+                            },
+                            onLongClickLabel = stringResource(if (state.muted) R.string.unmute else R.string.mute),
+                            modifier = Modifier.size(IconButtonDefaults.LargeButtonSize).testTag("abspielen"),
+                        ) {
                             Icon(
-                                painterResource(R.drawable.ic_volume_off),
-                                contentDescription = null,
-                                modifier = Modifier.align(Alignment.BottomEnd).size(16.dp).testTag("stumm"),
-                                tint = MaterialTheme.colorScheme.error,
+                                painterResource(if (state.isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
+                                stringResource(if (state.isPlaying) R.string.pause else R.string.play),
+                                modifier = Modifier.size(IconButtonDefaults.LargeIconSize),
                             )
+                        }
+                        if (state.muted) {
+                            // Gut sichtbares Stumm-Zeichen: roter Kreis mittig auf dem unteren Rand des Knopfs.
+                            Box(
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .offset(y = 10.dp)
+                                    .size(24.dp)
+                                    .background(MaterialTheme.colorScheme.error, CircleShape)
+                                    .testTag("stumm"),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_volume_off),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onError,
+                                )
+                            }
                         }
                     }
                     IconButton(onClick = actions::next) {

@@ -205,7 +205,7 @@ class BernosWearTest {
         val stumm = WatchState(groups = groups, selectedGroupId = "G1", title = "Song", isPlaying = true, volume = 30, muted = true)
         compose.setContent { BernosWear(stumm, null, PhoneConnection.CONNECTED, actions) }
 
-        compose.onNodeWithTag("stumm", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("stumm").assertIsDisplayed()
         compose.onNodeWithContentDescription("Stumm, Lautstärke 30").assertExists()
         compose.onNodeWithTag("abspielen").performTouchInput { longClick() }
 
