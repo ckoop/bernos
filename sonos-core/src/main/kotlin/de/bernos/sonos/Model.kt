@@ -56,6 +56,31 @@ data class TrackInfo(
     val albumArtUrl: String?,
 )
 
+/**
+ * Ein Sonos-Favorit ("Meine Sonos"). Verknüpfungen (z. B. Bereiche von Sonos Radio) haben keine
+ * [uri] und lassen sich nur in der Sonos-App öffnen.
+ */
+data class Favorite(
+    val id: String,
+    val title: String,
+    val uri: String?,
+    /** DIDL-Lite-Metadaten, die Sonos beim Abspielen zusammen mit der [uri] braucht. */
+    val metadata: String?,
+    val albumArtUrl: String?,
+    /** Quelle laut Sonos, z. B. "TuneIn" oder "Spotify". */
+    val description: String?,
+) {
+    val isPlayable: Boolean get() = !uri.isNullOrBlank()
+
+    /** Radiosender laufen direkt; Playlists, Alben und Titel gehen über die Warteschlange. */
+    val isStream: Boolean
+        get() = uri != null && (STREAM_SCHEMES.any { uri.startsWith(it) } || metadata?.contains("audioBroadcast") == true)
+
+    private companion object {
+        val STREAM_SCHEMES = listOf("x-sonosapi-stream:", "x-sonosapi-radio:", "x-rincon-mp3radio:", "x-sonosapi-hls:", "aac:", "hls-radio:")
+    }
+}
+
 /** Die gewählte Quelle, z. B. ein Radiosender mit seinem Logo. */
 data class SourceInfo(
     val title: String?,

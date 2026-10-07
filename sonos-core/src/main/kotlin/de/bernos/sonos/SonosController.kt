@@ -22,6 +22,8 @@ data class SonosState(
     val selectedGroupId: String? = null,
     val nowPlaying: NowPlaying? = null,
     val error: String? = null,
+    /** Sonos-Favoriten, auch nicht abspielbare Verknüpfungen (siehe [Favorite.isPlayable]). */
+    val favorites: List<Favorite> = emptyList(),
 ) {
     val selectedGroup: ZoneGroup? get() = groups.firstOrNull { it.id == selectedGroupId }
 
@@ -93,12 +95,24 @@ class SonosController(
         if (added || _state.value.groups.isEmpty()) scope.launch { refreshTopology() }
     }
 
-    /** Lädt Raumaufteilung und Wiedergabe sofort neu, z. B. wenn die Uhr-App geöffnet wird. */
+    /** Lädt Raumaufteilung, Wiedergabe und Favoriten sofort neu, z. B. wenn die Uhr-App geöffnet wird. */
     fun refresh() {
         scope.launch {
             refreshTopology()
             refreshNowPlaying()
+            refreshFavorites()
         }
+    }
+
+    /** Lädt die Favoriten neu, z. B. wenn die Liste geöffnet wird; in der Sonos-App können sie sich ändern. */
+    fun loadFavorites() {
+        scope.launch { refreshFavorites() }
+    }
+
+    /** Spielt einen Favoriten in der ausgewählten Gruppe ab. */
+    fun playFavorite(favoriteId: String) {
+        val favorite = _state.value.favorites.firstOrNull { it.id == favoriteId } ?: return
+        command { player.playFavorite(it.coordinator, favorite) }
     }
 
     fun selectGroup(groupId: String?) {
@@ -281,6 +295,16 @@ class SonosController(
         }
     }
 
+    private suspend fun refreshFavorites() {
+        val device = _state.value.groups.firstOrNull()?.coordinator ?: return
+        val favorites = try {
+            player.favorites(device)
+        } catch (e: SonosException) {
+            return // Ohne Favoriten funktioniert alles andere weiter.
+        }
+        _state.update { it.copy(favorites = favorites) }
+    }
+
     private suspend fun refreshTopology(preferredCoordinatorUuid: String? = null) {
         val hosts = synchronized(knownHosts) { knownHosts.toList() }
         for (address in hosts) {
@@ -299,6 +323,7 @@ class SonosController(
             // Eine frühere "Keine Lautsprecher gefunden"-Meldung ist jetzt überholt, andere Fehler bleiben stehen.
             val error = if (before.groups.isEmpty()) null else before.error
             _state.update { it.copy(groups = groups, selectedGroupId = selected?.id, error = error) }
+            if (before.groups.isEmpty()) refreshFavorites()
             if (selected?.coordinator?.uuid != before.selectedGroup?.coordinator?.uuid) {
                 _state.update { it.copy(nowPlaying = null) }
                 startTracking()

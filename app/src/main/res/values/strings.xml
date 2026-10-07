@@ -25,5 +25,10 @@
     <string name="remove_room">Entfernen</string>
     <string name="move_here">Hierher</string>
     <string name="speakers_count">%1$d Lautsprecher</string>
+    <string name="favorites">Favoriten</string>
+    <plurals name="favorite_shortcuts">
+        <item quantity="one">%1$d Verknüpfung lässt sich nur in der Sonos-App öffnen.</item>
+        <item quantity="other">%1$d Verknüpfungen lassen sich nur in der Sonos-App öffnen.</item>
+    </plurals>
     <string name="version">Bernos %1$s</string>
 </resources>

@@ -124,11 +124,16 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
 1. **Gerätetest vervollständigen**: die einzelnen Suchwege (SSDP/mDNS/IP) prüfen. Installation: `adb install -r app/build/outputs/apk/debug/app-debug.apk`; auf
    Xiaomi muss in den Entwickleroptionen „Über USB installieren“ aktiv sein und die Abfrage auf dem
    Handy bestätigt werden. Gefundene Abweichungen in `FakeSonosSystem` nachbilden und als Test festhalten.
-2. **Phase 4 – Sonos Ace (offen, ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
+2. **Phase 4 – Sonos-Favoriten** (in Arbeit, Version 0.4.0): `SonosPlayerClient.favorites`/
+   `playFavorite`, `SonosController.loadFavorites`/`playFavorite`, Handy-Reihe "Favoriten",
+   Uhr-Knopf "Favoriten" (Protokoll Version 3). Beim Nutzer gibt es nur Radio-Favoriten (TuneIn)
+   und Sonos-Radio-Verknüpfungen; der Weg über die Warteschlange (Playlists/Alben) ist nur gegen
+   `FakeSonosSystem` getestet.
+3. **Optional – Sonos Ace (ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
    Schnittstelle; die Ace hängt per Bluetooth am Handy, nicht im WLAN. Optionen: Content-Taste
    (geht heute), Sonos-App per Bedienungshilfe fernsteuern (fragil), Bluetooth-Protokoll
    analysieren (aufwendig). Vor jedem Aufwand mit dem Nutzer abstimmen.
-3. Kleinere offene Punkte:
+4. Kleinere offene Punkte:
    - Release-Signatur einrichten (Release nutzt derzeit den Debug-Schlüssel).
    - Ab Android 17 (API 37) prüfen, ob eine Berechtigung für das lokale Netz nötig ist.
    - Raumliste zeigt noch nicht, was in den einzelnen Räumen läuft.

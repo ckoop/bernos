@@ -20,11 +20,17 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
         @Volatile var title: String? = null
         /** Radiosender wie bei TuneIn: Logo nur in den Metadaten der Quelle, nicht beim Titel. */
         @Volatile var radio: Radio? = null
+        val queue: MutableList<String> = mutableListOf()
 
         val address: String get() = "${server.hostName}:${server.port}"
     }
 
     data class Radio(val station: String, val logoUrl: String, val streamContent: String?)
+
+    /** Favorit wie in "Meine Sonos"; ohne [uri] eine Verknüpfung, die nur die Sonos-App öffnen kann. */
+    data class FakeFavorite(val title: String, val uri: String?, val itemClass: String, val description: String = "TuneIn")
+
+    @Volatile var favorites: List<FakeFavorite> = emptyList()
 
     val speakers: List<Speaker> = roomNames.mapIndexed { i, name -> Speaker("RINCON_${i}00", name) }
     private var topologyVersion = 1
@@ -64,6 +70,11 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
                 "RelTime" to "0:01:00",
                 "TrackMetaData" to (coordinator.radio?.let { radioTrackDidl(it) } ?: coordinator.title?.let { didl(it) } ?: ""),
             )
+            "Browse" -> listOf("Result" to favoritesDidl(), "NumberReturned" to favorites.size.toString())
+            "RemoveAllTracksFromQueue" -> emptyList<Pair<String, String>>().also { coordinator.queue.clear() }
+            "AddURIToQueue" -> emptyList<Pair<String, String>>().also {
+                coordinator.queue += titleOf(args["EnqueuedURIMetaData"]) ?: args.getValue("EnqueuedURI")
+            }
             "GetMediaInfo" -> listOf("CurrentURIMetaData" to (coordinator.radio?.let { radioSourceDidl(it) } ?: ""))
             "Play" -> emptyList<Pair<String, String>>().also { coordinator.transport = "PLAYING" }
             "Pause" -> emptyList<Pair<String, String>>().also { coordinator.transport = "PAUSED_PLAYBACK" }
@@ -78,6 +89,14 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
             }
             "SetAVTransportURI" -> {
                 val uri = args.getValue("CurrentURI")
+                if (uri.startsWith("x-rincon-queue:")) {
+                    speaker.radio = null
+                    speaker.title = speaker.queue.firstOrNull()
+                } else if (!uri.startsWith("x-rincon:")) {
+                    // Radiosender: Titel aus den mitgeschickten Metadaten.
+                    speaker.radio = null
+                    speaker.title = titleOf(args["CurrentURIMetaData"])
+                }
                 if (uri.startsWith("x-rincon:")) {
                     speaker.coordinatorUuid = uri.removePrefix("x-rincon:")
                     speaker.transport = "STOPPED"
@@ -129,6 +148,27 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
     private fun didl(title: String) =
         "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\">" +
             "<item><dc:title>${Xml.escape(title)}</dc:title><dc:creator>Testband</dc:creator></item></DIDL-Lite>"
+
+    private fun titleOf(didl: String?): String? =
+        didl?.takeIf { it.isNotBlank() }?.let { runCatching { Xml.parse(it).firstText("title") }.getOrNull() }
+
+    // Aufbau wie bei echten Favoriten (Browse FV:2, Oktober 2026): resMD enthält maskiertes DIDL-Lite.
+    private fun favoritesDidl(): String = buildString {
+        append("<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" ")
+        append("xmlns:r=\"urn:schemas-rinconnetworks-com:metadata-1-0/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\">")
+        favorites.forEachIndexed { i, fav ->
+            val metadata = "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" " +
+                "xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\"><item id=\"x$i\"><dc:title>${Xml.escape(fav.title)}</dc:title>" +
+                "<upnp:class>${fav.itemClass}</upnp:class></item></DIDL-Lite>"
+            append("<item id=\"FV:2/$i\" parentID=\"FV:2\"><dc:title>${Xml.escape(fav.title)}</dc:title>")
+            append("<upnp:class>object.itemobject.item.sonos-favorite</upnp:class>")
+            append("<res>${fav.uri?.let { Xml.escape(it) } ?: ""}</res>")
+            append("<r:type>${if (fav.uri == null) "shortcut" else "instantPlay"}</r:type>")
+            append("<r:description>${fav.description}</r:description>")
+            append("<r:resMD>${Xml.escape(metadata)}</r:resMD></item>")
+        }
+        append("</DIDL-Lite>")
+    }
 
     // Aufbau wie bei einem echten TuneIn-Sender (STAR FM über Sonos, Oktober 2026).
     private fun radioTrackDidl(radio: Radio) =

@@ -70,12 +70,14 @@ interface WearActions {
     fun previous()
     fun setVolume(volume: Int)
     fun moveTo(roomUuid: String)
+    fun playFavorite(favoriteId: String)
     fun refresh()
     fun reconnect()
 }
 
 private const val HOME = "home"
 private const val ROOMS = "rooms"
+private const val FAVORITES = "favorites"
 
 @Composable
 fun BernosWear(state: WatchState?, cover: ImageBitmap?, connection: PhoneConnection, actions: WearActions) {
@@ -94,7 +96,19 @@ fun BernosWear(state: WatchState?, cover: ImageBitmap?, connection: PhoneConnect
                         state == null && currentConnection == PhoneConnection.UNREACHABLE -> PhoneUnreachable(actions::reconnect)
                         state == null -> Connecting()
                         state.selectedGroup == null -> RoomList(state, actions::selectGroup, actions::refresh)
-                        else -> PlayerScreen(state, currentCover, actions, onOpenRooms = { navController.navigate(ROOMS) })
+                        else -> PlayerScreen(
+                            state,
+                            currentCover,
+                            actions,
+                            onOpenRooms = { navController.navigate(ROOMS) },
+                            onOpenFavorites = { navController.navigate(FAVORITES) },
+                        )
+                    }
+                }
+                composable(FAVORITES) {
+                    FavoriteList(currentState ?: WatchState()) { id ->
+                        actions.playFavorite(id)
+                        navController.popBackStack()
                     }
                 }
                 composable(ROOMS) {
@@ -229,7 +243,41 @@ private fun RoomList(
 }
 
 @Composable
-private fun PlayerScreen(state: WatchState, cover: ImageBitmap?, actions: WearActions, onOpenRooms: () -> Unit) {
+private fun FavoriteList(state: WatchState, onPlay: (String) -> Unit) {
+    val listState = rememberScalingLazyListState()
+    ScreenScaffold(scrollState = listState) { contentPadding ->
+        ScalingLazyColumn(state = listState, contentPadding = contentPadding, modifier = Modifier.fillMaxSize()) {
+            item { ListHeader { Text(stringResource(R.string.favorites)) } }
+            if (state.favorites.isEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.no_favorites),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+            items(state.favorites, key = { it.id }) { favorite ->
+                Button(
+                    onClick = { onPlay(favorite.id) },
+                    modifier = Modifier.fillMaxWidth().testTag("favorit-${favorite.id}"),
+                    colors = ButtonDefaults.filledTonalButtonColors(),
+                    icon = { Icon(painterResource(R.drawable.ic_star), contentDescription = null) },
+                    label = { Text(favorite.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerScreen(
+    state: WatchState,
+    cover: ImageBitmap?,
+    actions: WearActions,
+    onOpenRooms: () -> Unit,
+    onOpenFavorites: () -> Unit,
+) {
     val group = state.selectedGroup ?: return
     var volume by remember { mutableIntStateOf(state.volume ?: 0) }
     var lastLocalChange by remember { mutableLongStateOf(0L) }
@@ -325,6 +373,16 @@ private fun PlayerScreen(state: WatchState, cover: ImageBitmap?, actions: WearAc
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
                         maxLines = 2,
+                    )
+                }
+                if (state.favorites.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    CompactButton(
+                        onClick = onOpenFavorites,
+                        modifier = Modifier.testTag("favoriten"),
+                        colors = ButtonDefaults.filledTonalButtonColors(),
+                        icon = { Icon(painterResource(R.drawable.ic_star), contentDescription = null) },
+                        label = { Text(stringResource(R.string.favorites)) },
                     )
                 }
             }

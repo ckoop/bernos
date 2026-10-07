@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.bernos.wear.BuildConfig
 import de.bernos.wear.PhoneConnection
+import de.bernos.wearprotocol.WatchFavorite
 import de.bernos.wearprotocol.WatchGroup
 import de.bernos.wearprotocol.WatchRoom
 import de.bernos.wearprotocol.WatchState
@@ -46,6 +47,7 @@ class BernosWearTest {
         override fun previous() { calls += "previous" }
         override fun setVolume(volume: Int) { calls += "volume:$volume" }
         override fun moveTo(roomUuid: String) { calls += "move:$roomUuid" }
+        override fun playFavorite(favoriteId: String) { calls += "favorite:$favoriteId" }
         override fun refresh() { calls += "refresh" }
         override fun reconnect() { calls += "reconnect" }
     }
@@ -118,6 +120,34 @@ class BernosWearTest {
 
         assertEquals(listOf("move:RINCON_3"), actions.calls)
         compose.onNodeWithText("Song").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Favorit abspielen`() {
+        val actions = RecordingActions()
+        val state = WatchState(
+            groups = groups,
+            selectedGroupId = "G1",
+            title = "Song",
+            volume = 10,
+            favorites = listOf(WatchFavorite("FV:2/3", "STAR FM Maximum Rock Berlin")),
+        )
+        compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, actions) }
+
+        compose.onNodeWithTag("favoriten").performClick()
+        compose.onNodeWithText("STAR FM Maximum Rock Berlin").performClick()
+
+        assertEquals(listOf("favorite:FV:2/3"), actions.calls)
+        compose.onNodeWithText("Song").assertIsDisplayed()
+    }
+
+    @Test
+    fun `ohne Favoriten kein Favoriten-Knopf`() {
+        val state = WatchState(groups = groups, selectedGroupId = "G1", title = "Song", volume = 10)
+        compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, RecordingActions()) }
+
+        compose.onNodeWithText("Song").assertIsDisplayed()
+        compose.onNodeWithTag("favoriten").assertDoesNotExist()
     }
 
     @Test

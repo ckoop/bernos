@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import de.bernos.app.BuildConfig
 import de.bernos.app.R
+import de.bernos.sonos.Favorite
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -79,6 +83,8 @@ interface BernosActions {
     fun addRoom(roomUuid: String)
     fun removeRoom(roomUuid: String)
     fun moveTo(roomUuid: String)
+    fun loadFavorites()
+    fun playFavorite(favoriteId: String)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,7 +135,7 @@ fun BernosScreen(state: SonosState, actions: BernosActions) {
                     modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp),
                 )
             } else {
-                NowPlayingView(selected, state.rooms, state.nowPlaying, actions)
+                NowPlayingView(selected, state.rooms, state.nowPlaying, state.favorites, actions)
             }
         }
     }
@@ -198,9 +204,12 @@ private fun NowPlayingView(
     group: ZoneGroup,
     allRooms: List<SonosDevice>,
     nowPlaying: NowPlaying?,
+    favorites: List<Favorite>,
     actions: BernosActions,
 ) {
     val track = nowPlaying?.track
+    // Favoriten können sich in der Sonos-App ändern; beim Öffnen eines Raums neu laden.
+    LaunchedEffect(group.id) { actions.loadFavorites() }
     Column(
         Modifier
             .fillMaxSize()
@@ -258,7 +267,53 @@ private fun NowPlayingView(
         nowPlaying?.volume?.let { volume -> VolumeSlider(group.id, volume, actions::setVolume) }
         Spacer(Modifier.height(24.dp))
 
+        FavoritesSection(favorites, actions::playFavorite)
+
         RoomsSection(group, allRooms, nowPlaying, actions)
+    }
+}
+
+/** Sonos-Favoriten als waagerechte Reihe; Verknüpfungen gehen nur in der Sonos-App und fehlen hier. */
+@Composable
+private fun FavoritesSection(favorites: List<Favorite>, onPlay: (String) -> Unit) {
+    if (favorites.isEmpty()) return
+    val playable = favorites.filter { it.isPlayable }
+    val shortcuts = favorites.size - playable.size
+    Column(Modifier.fillMaxWidth()) {
+        SectionTitle(stringResource(R.string.favorites))
+        if (playable.isNotEmpty()) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(playable, key = { it.id }) { favorite ->
+                    Column(
+                        Modifier
+                            .width(104.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onPlay(favorite.id) }
+                            .padding(4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Cover(favorite.albumArtUrl, Modifier.size(96.dp))
+                        Text(
+                            favorite.title,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                }
+            }
+        }
+        if (shortcuts > 0) {
+            Text(
+                pluralStringResource(R.plurals.favorite_shortcuts, shortcuts, shortcuts),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        Spacer(Modifier.height(16.dp))
     }
 }
 

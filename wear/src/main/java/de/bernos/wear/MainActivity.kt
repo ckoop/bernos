@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
             override fun previous() = phone.send(WatchCommand.Previous)
             override fun setVolume(volume: Int) = phone.send(WatchCommand.SetVolume(volume))
             override fun moveTo(roomUuid: String) = phone.send(WatchCommand.MoveTo(roomUuid))
+            override fun playFavorite(favoriteId: String) = phone.send(WatchCommand.PlayFavorite(favoriteId))
             override fun refresh() = phone.send(WatchCommand.Refresh)
             override fun reconnect() = phone.send(WatchCommand.Hello)
         }

@@ -30,6 +30,11 @@ enum class SonosService(val controlPath: String, val eventPath: String, val urn:
         "/ZoneGroupTopology/Event",
         "urn:schemas-upnp-org:service:ZoneGroupTopology:1",
     ),
+    CONTENT_DIRECTORY(
+        "/MediaServer/ContentDirectory/Control",
+        "/MediaServer/ContentDirectory/Event",
+        "urn:schemas-upnp-org:service:ContentDirectory:1",
+    ),
 }
 
 /** Minimaler SOAP-Client für die lokale Sonos-Schnittstelle (Port 1400). */

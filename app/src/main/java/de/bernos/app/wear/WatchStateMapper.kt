@@ -1,6 +1,7 @@
 package de.bernos.app.wear
 
 import de.bernos.sonos.SonosState
+import de.bernos.wearprotocol.WatchFavorite
 import de.bernos.wearprotocol.WatchGroup
 import de.bernos.wearprotocol.WatchRoom
 import de.bernos.wearprotocol.WatchState
@@ -24,5 +25,6 @@ internal fun SonosState.toWatchState(): WatchState {
         moveTargets = selectedGroup?.let { group ->
             rooms.filter { it.uuid != group.coordinator.uuid }.map { WatchRoom(uuid = it.uuid, name = it.roomName) }
         } ?: emptyList(),
+        favorites = favorites.filter { it.isPlayable }.map { WatchFavorite(id = it.id, title = it.title) },
     )
 }

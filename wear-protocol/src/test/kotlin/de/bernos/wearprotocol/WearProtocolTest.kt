@@ -22,6 +22,7 @@ class WearProtocolTest {
             volume = 23,
             error = "Bei dieser Quelle nicht möglich",
             moveTargets = listOf(WatchRoom("RINCON_2", "Küche"), WatchRoom("RINCON_3", "Bad")),
+            favorites = listOf(WatchFavorite("FV:2/3", "STAR FM Maximum Rock Berlin")),
         )
 
         val decoded = WatchState.decode(state.encode())
@@ -46,6 +47,7 @@ class WearProtocolTest {
             WatchCommand.Previous,
             WatchCommand.SetVolume(42),
             WatchCommand.MoveTo("RINCON_3"),
+            WatchCommand.PlayFavorite("FV:2/3"),
         )
         commands.forEach { assertEquals(it, WatchCommand.decode(it.encode())) }
     }

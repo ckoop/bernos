@@ -27,7 +27,16 @@ Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wea
   Steuerknöpfen; Komplikation (kurzer/langer Text) mit dem laufenden Titel.
 - Bewusst weggelassen: weitere Komplikationsformen (nur Symbol, kleines Cover-Bild).
 
-## Phase 4 – Sonos Ace (offen)
+## Phase 4 – Sonos-Favoriten
+- Favoriten ("Meine Sonos") über ContentDirectory `Browse("FV:2")` lesen.
+- Abspielen im gewählten Raum: Radiosender direkt (`SetAVTransportURI` mit den Metadaten aus
+  `r:resMD`), Playlists/Alben über die Warteschlange (`RemoveAllTracksFromQueue`,
+  `AddURIToQueue`, `x-rincon-queue:`), danach `Play`.
+- Verknüpfungen (`r:type` = `shortcut`, z. B. Bereiche von Sonos Radio) haben keine Adresse und
+  gehen nur in der Sonos-App; Bernos weist darauf hin.
+- Handy: Reihe "Favoriten" in der Wiedergabe. Uhr: Knopf "Favoriten" in der Wiedergabe.
+
+## Optional – Sonos Ace
 Sonos bietet für „TV Audio Swap“ keine öffentliche Schnittstelle; die Ace ist kein
 WLAN-Lautsprecher, sondern per Bluetooth mit dem Handy verbunden. Mögliche Wege:
 1. Content-Taste an der Ace gedrückt halten (funktioniert heute schon ohne App).

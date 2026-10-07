@@ -40,6 +40,8 @@ class MainActivity : ComponentActivity() {
             override fun addRoom(roomUuid: String) = controller.addRoomToGroup(roomUuid)
             override fun removeRoom(roomUuid: String) = controller.removeRoomFromGroup(roomUuid)
             override fun moveTo(roomUuid: String) = controller.movePlaybackTo(roomUuid)
+            override fun loadFavorites() = controller.loadFavorites()
+            override fun playFavorite(favoriteId: String) = controller.playFavorite(favoriteId)
         }
 
         setContent {

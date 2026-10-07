@@ -22,7 +22,7 @@ object WearProtocol {
     const val PHONE_CAPABILITY = "bernos_phone"
 
     /** Format-Version; bei inkompatiblen Änderungen erhöhen. */
-    const val VERSION = 2
+    const val VERSION = 3
 }
 
 /** Ein Raum bzw. eine Gruppe, wie die Uhr sie in der Liste zeigt. */
@@ -36,6 +36,12 @@ data class WatchGroup(
 data class WatchRoom(
     val uuid: String,
     val name: String,
+)
+
+/** Ein abspielbarer Sonos-Favorit. */
+data class WatchFavorite(
+    val id: String,
+    val title: String,
 )
 
 /** Alles, was die Uhr anzeigt. Bewusst klein gehalten, die Position wird nicht übertragen. */
@@ -53,6 +59,8 @@ data class WatchState(
     val error: String? = null,
     /** Räume, in die sich die Musik der gewählten Gruppe verschieben lässt (ohne den steuernden Raum). */
     val moveTargets: List<WatchRoom> = emptyList(),
+    /** Nur abspielbare Favoriten; Verknüpfungen gehen ohnehin nur in der Sonos-App. */
+    val favorites: List<WatchFavorite> = emptyList(),
 ) {
     val selectedGroup: WatchGroup? get() = groups.firstOrNull { it.id == selectedGroupId }
 
@@ -78,6 +86,11 @@ data class WatchState(
             out.writeUTF(it.uuid)
             out.writeUTF(it.name)
         }
+        out.writeInt(favorites.size)
+        favorites.forEach {
+            out.writeUTF(it.id)
+            out.writeUTF(it.title)
+        }
     }
 
     companion object {
@@ -99,6 +112,7 @@ data class WatchState(
                 discovering = input.readBoolean(),
                 error = input.readNullable(),
                 moveTargets = List(input.readInt()) { WatchRoom(uuid = input.readUTF(), name = input.readUTF()) },
+                favorites = List(input.readInt()) { WatchFavorite(id = input.readUTF(), title = input.readUTF()) },
             )
         }
     }
@@ -116,6 +130,8 @@ sealed interface WatchCommand {
     data class SetVolume(val volume: Int) : WatchCommand
     /** Laufende Musik der gewählten Gruppe in diesen Raum verschieben; der bisherige Raum verstummt. */
     data class MoveTo(val roomUuid: String) : WatchCommand
+    /** Favoriten in der gewählten Gruppe abspielen. */
+    data class PlayFavorite(val favoriteId: String) : WatchCommand
 
     fun encode(): ByteArray = write { out ->
         out.writeInt(WearProtocol.VERSION)
@@ -137,6 +153,10 @@ sealed interface WatchCommand {
                 out.writeUTF("move")
                 out.writeUTF(roomUuid)
             }
+            is PlayFavorite -> {
+                out.writeUTF("favorite")
+                out.writeUTF(favoriteId)
+            }
         }
     }
 
@@ -153,6 +173,7 @@ sealed interface WatchCommand {
                 "previous" -> Previous
                 "volume" -> SetVolume(input.readInt().coerceIn(0, 100))
                 "move" -> MoveTo(input.readUTF())
+                "favorite" -> PlayFavorite(input.readUTF())
                 else -> null
             }
         }

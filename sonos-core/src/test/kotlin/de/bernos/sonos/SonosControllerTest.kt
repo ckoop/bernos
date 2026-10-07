@@ -47,6 +47,10 @@ class SonosControllerTest {
 
     private fun uuid(room: String) = fake.speaker(room).uuid
 
+    private companion object {
+        val QUEUE_ACTIONS = setOf("RemoveAllTracksFromQueue", "AddURIToQueue", "SetAVTransportURI")
+    }
+
     @Test
     fun `findet Raeume per Adresse und zeigt den laufenden Titel`() = runBlocking {
         controller.addHost(fake.speaker("Küche").address)
@@ -79,6 +83,34 @@ class SonosControllerTest {
         assertEquals("Alanis Morissette", song.nowPlaying!!.track?.artist)
         assertEquals("STAR FM", song.nowPlaying!!.track?.album)
         assertEquals(logo, song.nowPlaying!!.track?.albumArtUrl)
+    }
+
+    @Test
+    fun `Favoriten laden und abspielen - Sender direkt, Playlist ueber die Warteschlange`() = runBlocking {
+        fake.favorites = listOf(
+            FakeSonosSystem.FakeFavorite("Aktuell angesagt", uri = null, itemClass = "object.container", description = "Sonos Radio"),
+            FakeSonosSystem.FakeFavorite("STAR FM", "x-sonosapi-stream:tunein%3A5229?sid=303", "object.item.audioItem.audioBroadcast"),
+            FakeSonosSystem.FakeFavorite("Lieblingslieder", "x-rincon-cpcontainer:1006206cspotify%3Aplaylist%3A1", "object.container.playlistContainer", "Spotify"),
+        )
+        val bad = fake.speaker("Bad")
+        controller.addHost(bad.address)
+        val loaded = awaitState("Favoriten geladen") { it.favorites.size == 3 && it.groups.size == 3 }
+        controller.selectGroup(loaded.groups.first { it.coordinator.roomName == "Bad" }.id)
+        awaitState("Bad gewählt") { it.nowPlaying?.groupId != null }
+
+        controller.playFavorite(loaded.favorites.first { it.title == "STAR FM" }.id)
+        awaitState("Sender läuft") { it.nowPlaying?.track?.title == "STAR FM" && it.nowPlaying?.isPlaying == true }
+        assertTrue(fake.calls.containsAll(listOf("Bad:SetAVTransportURI", "Bad:Play")))
+        assertTrue("Sender braucht keine Warteschlange", "Bad:AddURIToQueue" !in fake.calls)
+
+        controller.playFavorite(loaded.favorites.first { it.title == "Lieblingslieder" }.id)
+        awaitState("Playlist läuft") { it.nowPlaying?.track?.title == "Lieblingslieder" }
+        val queueCalls = fake.calls.filter { it.startsWith("Bad:") && it.substringAfter(':') in QUEUE_ACTIONS }
+        assertEquals(listOf("Bad:RemoveAllTracksFromQueue", "Bad:AddURIToQueue", "Bad:SetAVTransportURI"), queueCalls.takeLast(3))
+
+        controller.playFavorite(loaded.favorites.first { it.title == "Aktuell angesagt" }.id)
+        awaitState("Hinweis für Verknüpfung") { it.error?.contains("Sonos-App") == true }
+        Unit
     }
 
     @Test

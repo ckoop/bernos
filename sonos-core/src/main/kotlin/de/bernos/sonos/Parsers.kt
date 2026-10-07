@@ -56,6 +56,26 @@ internal object Parsers {
         return SourceInfo(title = title, albumArtUrl = art)
     }
 
+    /**
+     * Favoriten aus `Browse("FV:2")`. Die Metadaten zum Abspielen stehen als maskiertes
+     * DIDL-Lite in `r:resMD` und kommen hier als Text heraus.
+     */
+    fun parseFavorites(didl: String?, baseUrl: String): List<Favorite> {
+        if (didl.isNullOrBlank()) return emptyList()
+        val doc = runCatching { Xml.parse(didl) }.getOrNull() ?: return emptyList()
+        return doc.descendants("item").mapNotNull { item ->
+            val title = item.firstText("title") ?: return@mapNotNull null
+            Favorite(
+                id = item.getAttribute("id"),
+                title = title,
+                uri = item.firstText("res"),
+                metadata = item.firstText("resMD"),
+                albumArtUrl = item.firstText("albumArtURI")?.let { resolveUrl(it, baseUrl) },
+                description = item.firstText("description"),
+            )
+        }
+    }
+
     fun resolveUrl(url: String, baseUrl: String): String = when {
         url.startsWith("http://") || url.startsWith("https://") -> url
         url.startsWith("/") -> baseUrl + url

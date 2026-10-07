@@ -2,6 +2,7 @@ package de.bernos.sonos
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ParsersTest {
@@ -87,6 +88,33 @@ class ParsersTest {
             "https://sali.sonos.superhi.fi/image?w=60&image=https%3A%2F%2Fcdn-profiles.tunein.com%2Fs8041%2Fimages%2Flogog.png&partnerId=tunein",
             source.albumArtUrl,
         )
+    }
+
+    @Test
+    fun `Favoriten - Sender abspielbar, Verknuepfung nicht, Metadaten als Text`() {
+        // Echte Antwort eines Sonos-Lautsprechers auf Browse("FV:2"), gekürzt.
+        val didl = """
+            <DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
+            <item id="FV:2/0" parentID="FV:2" restricted="false"><dc:title>Aktuell angesagt</dc:title><upnp:class>object.itemobject.item.sonos-favorite</upnp:class><r:ordinal>0</r:ordinal><res></res><r:type>shortcut</r:type><r:description>Sonos Radio</r:description><r:resMD>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;10fe3064&quot;&gt;&lt;dc:title&gt;Aktuell angesagt&lt;/dc:title&gt;&lt;upnp:class&gt;object.container&lt;/upnp:class&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</r:resMD></item>
+            <item id="FV:2/3" parentID="FV:2" restricted="false"><dc:title>STAR FM Maximum Rock Berlin</dc:title><upnp:class>object.itemobject.item.sonos-favorite</upnp:class><r:ordinal>3</r:ordinal><res protocolInfo="x-sonosapi-stream:*:*:*">x-sonosapi-stream:tunein%3A5229?sid=303&amp;flags=8292&amp;sn=1</res><upnp:albumArtURI>https://sali.sonos.superhi.fi/image?w=60&amp;partnerId=tunein</upnp:albumArtURI><r:type>instantPlay</r:type><r:description>Sonos Radio</r:description><r:resMD>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;10092064tunein%3A5229&quot;&gt;&lt;dc:title&gt;STAR FM Maximum Rock Berlin&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.audioBroadcast&lt;/upnp:class&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</r:resMD></item>
+            <item id="FV:2/4" parentID="FV:2" restricted="false"><dc:title>Lieblingslieder</dc:title><upnp:class>object.itemobject.item.sonos-favorite</upnp:class><res>x-rincon-cpcontainer:1006206cspotify%3Aplaylist%3A123</res><r:type>instantPlay</r:type><r:description>Spotify</r:description><r:resMD>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1006206c&quot;&gt;&lt;dc:title&gt;Lieblingslieder&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</r:resMD></item>
+            </DIDL-Lite>
+        """.trimIndent()
+
+        val favorites = Parsers.parseFavorites(didl, base)
+
+        assertEquals(listOf("Aktuell angesagt", "STAR FM Maximum Rock Berlin", "Lieblingslieder"), favorites.map { it.title })
+        val (shortcut, radio, playlist) = favorites
+        assertEquals(false, shortcut.isPlayable)
+        assertEquals(true, radio.isPlayable)
+        assertEquals(true, radio.isStream)
+        assertEquals("x-sonosapi-stream:tunein%3A5229?sid=303&flags=8292&sn=1", radio.uri)
+        assertEquals("https://sali.sonos.superhi.fi/image?w=60&partnerId=tunein", radio.albumArtUrl)
+        assertEquals("FV:2/3", radio.id)
+        assertTrue(radio.metadata!!.startsWith("<DIDL-Lite"))
+        assertEquals(true, playlist.isPlayable)
+        assertEquals(false, playlist.isStream)
+        assertEquals("Spotify", playlist.description)
     }
 
     @Test

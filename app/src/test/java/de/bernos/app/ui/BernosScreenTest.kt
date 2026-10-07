@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.bernos.app.BuildConfig
+import de.bernos.sonos.Favorite
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -52,6 +53,8 @@ class BernosScreenTest {
         override fun addRoom(roomUuid: String) { calls += "add:$roomUuid" }
         override fun removeRoom(roomUuid: String) { calls += "remove:$roomUuid" }
         override fun moveTo(roomUuid: String) { calls += "move:$roomUuid" }
+        override fun loadFavorites() { calls += "loadFavorites" }
+        override fun playFavorite(favoriteId: String) { calls += "favorite:$favoriteId" }
     }
 
     private fun show(state: SonosState): RecordingActions {
@@ -115,7 +118,7 @@ class BernosScreenTest {
         compose.onNodeWithText("Hierher").performScrollTo().performClick()
         compose.onNodeWithText("Dazu").performScrollTo().performClick()
 
-        assertEquals(listOf("remove:RINCON_2", "move:RINCON_3", "add:RINCON_3"), actions.calls)
+        assertEquals(listOf("loadFavorites", "remove:RINCON_2", "move:RINCON_3", "add:RINCON_3"), actions.calls)
     }
 
     @Test
@@ -126,6 +129,24 @@ class BernosScreenTest {
         compose.onNodeWithText("Nichts wird abgespielt").performScrollTo().assertIsDisplayed()
         compose.onNode(hasContentDescription("Abspielen")).performScrollTo().performClick()
 
-        assertEquals(listOf("playPause"), actions.calls)
+        assertEquals(listOf("loadFavorites", "playPause"), actions.calls)
+    }
+
+    @Test
+    fun favoriten_werden_angezeigt_und_abgespielt() {
+        val favorites = listOf(
+            Favorite("FV:2/0", "Aktuell angesagt", uri = null, metadata = null, albumArtUrl = null, description = "Sonos Radio"),
+            Favorite("FV:2/3", "STAR FM Maximum Rock Berlin", "x-sonosapi-stream:tunein%3A5229", "<DIDL-Lite/>", null, "TuneIn"),
+        )
+        val nowPlaying = NowPlaying("G2", TransportState.PAUSED, null, null, null, 0, 10, false)
+        val actions = show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = nowPlaying, favorites = favorites))
+
+        compose.onNodeWithText("Favoriten").performScrollTo().assertIsDisplayed()
+        // Verknüpfungen lassen sich nicht abspielen und erscheinen nur als Hinweis.
+        assertEquals(0, compose.onAllNodesWithText("Aktuell angesagt").fetchSemanticsNodes().size)
+        compose.onNodeWithText("1 Verknüpfung lässt sich nur in der Sonos-App öffnen.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("STAR FM Maximum Rock Berlin").performScrollTo().performClick()
+
+        assertEquals(listOf("loadFavorites", "favorite:FV:2/3"), actions.calls)
     }
 }

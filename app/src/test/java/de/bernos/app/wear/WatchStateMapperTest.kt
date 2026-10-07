@@ -1,5 +1,6 @@
 package de.bernos.app.wear
 
+import de.bernos.sonos.Favorite
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -66,6 +67,18 @@ class WatchStateMapperTest {
         assertNull(watch.title)
         assertNull(watch.volume)
         assertFalse(watch.isPlaying)
+    }
+
+    @Test
+    fun `nur abspielbare Favoriten gehen an die Uhr`() {
+        val state = SonosState(
+            groups = groups,
+            favorites = listOf(
+                Favorite("FV:2/0", "Aktuell angesagt", null, null, null, "Sonos Radio"),
+                Favorite("FV:2/3", "STAR FM", "x-sonosapi-stream:tunein%3A5229", "<DIDL-Lite/>", null, "TuneIn"),
+            ),
+        )
+        assertEquals(listOf("STAR FM"), state.toWatchState().favorites.map { it.title })
     }
 
     @Test

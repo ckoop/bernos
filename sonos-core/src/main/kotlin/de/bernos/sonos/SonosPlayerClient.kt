@@ -97,6 +97,49 @@ class SonosPlayerClient(private val soap: SoapClient) {
         return Parsers.parseZoneGroups(state)
     }
 
+    /** Sonos-Favoriten des ganzen Systems; jeder Lautsprecher kann sie liefern. */
+    suspend fun favorites(anyDevice: SonosDevice): List<Favorite> {
+        val result = soap.call(
+            anyDevice,
+            SonosService.CONTENT_DIRECTORY,
+            "Browse",
+            listOf(
+                "ObjectID" to "FV:2",
+                "BrowseFlag" to "BrowseDirectChildren",
+                "Filter" to "*",
+                "StartingIndex" to "0",
+                "RequestedCount" to "200",
+                "SortCriteria" to "",
+            ),
+        )
+        return Parsers.parseFavorites(result["Result"], anyDevice.baseUrl)
+    }
+
+    /**
+     * Spielt einen Favoriten in der Gruppe von [coordinator] ab. Radiosender werden direkt
+     * gesetzt; alles andere ersetzt die Warteschlange und spielt sie von vorn, wie in der Sonos-App.
+     */
+    suspend fun playFavorite(coordinator: SonosDevice, favorite: Favorite) {
+        val uri = favorite.uri?.takeIf { it.isNotBlank() }
+            ?: throw SonosException("„${favorite.title}“ lässt sich nur in der Sonos-App öffnen")
+        val metadata = favorite.metadata.orEmpty()
+        if (favorite.isStream) {
+            avTransport(coordinator, "SetAVTransportURI", "CurrentURI" to uri, "CurrentURIMetaData" to metadata)
+        } else {
+            avTransport(coordinator, "RemoveAllTracksFromQueue")
+            avTransport(
+                coordinator,
+                "AddURIToQueue",
+                "EnqueuedURI" to uri,
+                "EnqueuedURIMetaData" to metadata,
+                "DesiredFirstTrackNumberEnqueued" to "0",
+                "EnqueueAsNext" to "0",
+            )
+            avTransport(coordinator, "SetAVTransportURI", "CurrentURI" to "x-rincon-queue:${coordinator.uuid}#0", "CurrentURIMetaData" to "")
+        }
+        play(coordinator)
+    }
+
     private suspend fun avTransport(device: SonosDevice, action: String, vararg args: Pair<String, String>) =
         soap.call(device, SonosService.AV_TRANSPORT, action, listOf("InstanceID" to "0") + args)
 
