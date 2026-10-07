@@ -18,9 +18,13 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
         @Volatile var volume: Int = 20
         @Volatile var transport: String = "STOPPED"
         @Volatile var title: String? = null
+        /** Radiosender wie bei TuneIn: Logo nur in den Metadaten der Quelle, nicht beim Titel. */
+        @Volatile var radio: Radio? = null
 
         val address: String get() = "${server.hostName}:${server.port}"
     }
+
+    data class Radio(val station: String, val logoUrl: String, val streamContent: String?)
 
     val speakers: List<Speaker> = roomNames.mapIndexed { i, name -> Speaker("RINCON_${i}00", name) }
     private var topologyVersion = 1
@@ -58,9 +62,9 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
             "GetPositionInfo" -> listOf(
                 "TrackDuration" to "0:03:00",
                 "RelTime" to "0:01:00",
-                "TrackMetaData" to (coordinator.title?.let { didl(it) } ?: ""),
+                "TrackMetaData" to (coordinator.radio?.let { radioTrackDidl(it) } ?: coordinator.title?.let { didl(it) } ?: ""),
             )
-            "GetMediaInfo" -> listOf("CurrentURIMetaData" to "")
+            "GetMediaInfo" -> listOf("CurrentURIMetaData" to (coordinator.radio?.let { radioSourceDidl(it) } ?: ""))
             "Play" -> emptyList<Pair<String, String>>().also { coordinator.transport = "PLAYING" }
             "Pause" -> emptyList<Pair<String, String>>().also { coordinator.transport = "PAUSED_PLAYBACK" }
             "Next", "Previous" -> emptyList()
@@ -125,6 +129,20 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
     private fun didl(title: String) =
         "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\">" +
             "<item><dc:title>${Xml.escape(title)}</dc:title><dc:creator>Testband</dc:creator></item></DIDL-Lite>"
+
+    // Aufbau wie bei einem echten TuneIn-Sender (STAR FM über Sonos, Oktober 2026).
+    private fun radioTrackDidl(radio: Radio) =
+        "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" " +
+            "xmlns:r=\"urn:schemas-rinconnetworks-com:metadata-1-0/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\">" +
+            "<item id=\"-1\" parentID=\"-1\"><res>aac://https://stream.example.org/sender-64?sABC=abc%230%23def</res>" +
+            (radio.streamContent?.let { "<r:streamContent>${Xml.escape(it)}</r:streamContent>" } ?: "") +
+            "<dc:title>sender-64?sABC=abc#0#def</dc:title><upnp:class>object.item</upnp:class></item></DIDL-Lite>"
+
+    private fun radioSourceDidl(radio: Radio) =
+        "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" " +
+            "xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\"><item id=\"-1\" parentID=\"-1\">" +
+            "<dc:title>${Xml.escape(radio.station)}</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class>" +
+            "<upnp:albumArtURI>${Xml.escape(radio.logoUrl)}</upnp:albumArtURI></item></DIDL-Lite>"
 
     private fun envelope(urn: String, action: String, values: List<Pair<String, String>>) = buildString {
         append("<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body>")

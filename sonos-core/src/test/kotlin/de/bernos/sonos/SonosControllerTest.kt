@@ -61,6 +61,27 @@ class SonosControllerTest {
     }
 
     @Test
+    fun `Radio - Cover ist das Senderlogo, auch waehrend der Werbung`() = runBlocking {
+        val logo = "https://cdn.example.org/starfm.png"
+        val wohnzimmer = fake.speaker("Wohnzimmer")
+        // Während der TuneIn-Werbung gibt es noch keinen streamContent.
+        wohnzimmer.radio = FakeSonosSystem.Radio("STAR FM", logo, streamContent = null)
+        controller.addHost(wohnzimmer.address)
+        val state = awaitState("drei Räume") { it.groups.size == 3 }
+        controller.selectGroup(state.groups.first { it.coordinator.roomName == "Wohnzimmer" }.id)
+
+        val werbung = awaitState("Senderlogo") { it.nowPlaying?.track?.albumArtUrl == logo }
+        assertEquals(null, werbung.nowPlaying!!.track?.title)
+        assertEquals("STAR FM", werbung.nowPlaying!!.track?.album)
+
+        wohnzimmer.radio = FakeSonosSystem.Radio("STAR FM", logo, streamContent = "Alanis Morissette - You Oughta Know")
+        val song = awaitState("Titel vom Sender") { it.nowPlaying?.track?.title == "You Oughta Know" }
+        assertEquals("Alanis Morissette", song.nowPlaying!!.track?.artist)
+        assertEquals("STAR FM", song.nowPlaying!!.track?.album)
+        assertEquals(logo, song.nowPlaying!!.track?.albumArtUrl)
+    }
+
+    @Test
     fun `gruppieren, Raumlautstaerke, Musik verschieben und Raum entfernen`() = runBlocking {
         controller.addHost(fake.speaker("Wohnzimmer").address)
         val initial = awaitState("drei Räume") { it.groups.size == 3 }

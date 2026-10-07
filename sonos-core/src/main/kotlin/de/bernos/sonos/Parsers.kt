@@ -1,6 +1,7 @@
 package de.bernos.sonos
 
 import java.net.URI
+import java.net.URLDecoder
 
 internal object Parsers {
 
@@ -28,17 +29,31 @@ internal object Parsers {
                 title = stream
             }
         }
-        // Manche Quellen liefern als Titel nur die Stream-URL.
-        if (title != null && title.contains("://")) title = null
+        // Manche Quellen liefern als Titel nur die Stream-URL oder ein Stück davon
+        // (TuneIn z. B. "30-simulcastberlin-aacplus-64-...?sABC=...").
+        if (title != null && (title.contains("://") || isPartOfStreamUrl(title, doc.firstText("res")))) title = null
 
         if (title == null && artist == null && album == null && art == null) return null
         return TrackInfo(title = title, artist = artist, album = album, albumArtUrl = art)
     }
 
-    /** Name des Senders bzw. der Quelle aus `GetMediaInfo` → `CurrentURIMetaData`. */
-    fun parseSourceTitle(didl: String?): String? {
+    private fun isPartOfStreamUrl(title: String, res: String?): Boolean {
+        if (res == null || title.length < 8) return false
+        val decoded = runCatching { URLDecoder.decode(res, Charsets.UTF_8) }.getOrDefault(res)
+        return res.contains(title) || decoded.contains(title)
+    }
+
+    /**
+     * Name und Bild des Senders bzw. der Quelle aus `GetMediaInfo` → `CurrentURIMetaData`.
+     * Bei Radiosendern (z. B. TuneIn) steht das Senderlogo nur hier, nicht in `TrackMetaData`.
+     */
+    fun parseSourceInfo(didl: String?, baseUrl: String): SourceInfo? {
         if (didl.isNullOrBlank() || didl == "NOT_IMPLEMENTED") return null
-        return runCatching { Xml.parse(didl).firstText("title") }.getOrNull()
+        val doc = runCatching { Xml.parse(didl) }.getOrNull() ?: return null
+        val title = doc.firstText("title")
+        val art = doc.firstText("albumArtURI")?.let { resolveUrl(it, baseUrl) }
+        if (title == null && art == null) return null
+        return SourceInfo(title = title, albumArtUrl = art)
     }
 
     fun resolveUrl(url: String, baseUrl: String): String = when {

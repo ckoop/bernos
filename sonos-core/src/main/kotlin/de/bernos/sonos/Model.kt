@@ -56,6 +56,12 @@ data class TrackInfo(
     val albumArtUrl: String?,
 )
 
+/** Die gewählte Quelle, z. B. ein Radiosender mit seinem Logo. */
+data class SourceInfo(
+    val title: String?,
+    val albumArtUrl: String?,
+)
+
 /** Momentaufnahme dessen, was eine Gruppe gerade abspielt. */
 data class NowPlaying(
     val groupId: String,

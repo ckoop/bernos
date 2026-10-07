@@ -316,10 +316,15 @@ class SonosController(
                     volume?.let { mapOf(coordinator.uuid to it) } ?: emptyMap()
                 }
                 var track = position.track
-                if (track?.album == null) {
-                    val source = runCatching { player.sourceTitle(coordinator) }.getOrNull()
-                    if (source != null && source != track?.title) {
-                        track = (track ?: TrackInfo(null, null, null, null)).copy(album = source)
+                // Fehlt Album oder Cover (typisch bei Radio), helfen Name und Logo der Quelle aus.
+                if (track?.album == null || track.albumArtUrl == null) {
+                    val source = runCatching { player.sourceInfo(coordinator) }.getOrNull()
+                    if (source != null) {
+                        val base = track ?: TrackInfo(null, null, null, null)
+                        track = base.copy(
+                            album = base.album ?: source.title?.takeIf { it != base.title },
+                            albumArtUrl = base.albumArtUrl ?: source.albumArtUrl,
+                        )
                     }
                 }
                 val nowPlaying = NowPlaying(

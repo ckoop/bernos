@@ -38,9 +38,9 @@ class SonosPlayerClient(private val soap: SoapClient) {
         )
     }
 
-    /** Titel der aktuellen Quelle, z. B. der Name eines Radiosenders. */
-    suspend fun sourceTitle(device: SonosDevice): String? =
-        Parsers.parseSourceTitle(avTransport(device, "GetMediaInfo")["CurrentURIMetaData"])
+    /** Aktuelle Quelle, z. B. Name und Logo eines Radiosenders. */
+    suspend fun sourceInfo(device: SonosDevice): SourceInfo? =
+        Parsers.parseSourceInfo(avTransport(device, "GetMediaInfo")["CurrentURIMetaData"], device.baseUrl)
 
     /** Lautstärke der ganzen Gruppe (0–100). Muss am Koordinator abgefragt werden. */
     suspend fun groupVolume(coordinator: SonosDevice): Int? =

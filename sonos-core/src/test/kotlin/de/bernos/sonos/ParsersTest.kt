@@ -52,6 +52,44 @@ class ParsersTest {
     }
 
     @Test
+    fun `Radio TuneIn - Stueck der Stream-URL ist kein Titel, Logo kommt aus der Quelle`() {
+        // Echte Antwort eines Sonos-Lautsprechers mit TuneIn (STAR FM), gekürzt.
+        val track = Parsers.parseTrackMetadata(
+            """
+            <DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
+              xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
+              <item id="-1" parentID="-1" restricted="true">
+                <res protocolInfo="aac:*:application/octet-stream:*">aac://https://starfm.streamabc.net/30-simulcastberlin-aacplus-64-6777963?sABC=6np5qs90%230%23rp6pr4n3&amp;aw_0_1st.playerid=tunein</res>
+                <dc:title>30-simulcastberlin-aacplus-64-6777963?sABC=6np5qs90#0#rp6pr4n3&amp;aw_0_1st.playerid=tunein</dc:title>
+                <upnp:class>object.item</upnp:class>
+              </item>
+            </DIDL-Lite>
+            """.trimIndent(),
+            base,
+        )
+        assertNull(track)
+
+        val source = Parsers.parseSourceInfo(
+            """
+            <DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
+              xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
+              <item id="-1" parentID="-1" restricted="true">
+                <dc:title>STAR FM Maximum Rock Berlin</dc:title>
+                <upnp:class>object.item.audioItem.audioBroadcast</upnp:class>
+                <upnp:albumArtURI>https://sali.sonos.superhi.fi/image?w=60&amp;image=https%3A%2F%2Fcdn-profiles.tunein.com%2Fs8041%2Fimages%2Flogog.png&amp;partnerId=tunein</upnp:albumArtURI>
+              </item>
+            </DIDL-Lite>
+            """.trimIndent(),
+            base,
+        )!!
+        assertEquals("STAR FM Maximum Rock Berlin", source.title)
+        assertEquals(
+            "https://sali.sonos.superhi.fi/image?w=60&image=https%3A%2F%2Fcdn-profiles.tunein.com%2Fs8041%2Fimages%2Flogog.png&partnerId=tunein",
+            source.albumArtUrl,
+        )
+    }
+
+    @Test
     fun `leere Metadaten ergeben null`() {
         assertNull(Parsers.parseTrackMetadata("", base))
         assertNull(Parsers.parseTrackMetadata("NOT_IMPLEMENTED", base))
