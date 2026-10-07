@@ -216,8 +216,9 @@ private fun RoomList(
                         ButtonDefaults.filledTonalButtonColors()
                     },
                     icon = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = null) },
+                    // Zwei Zeilen, damit der Akkustand hinter einem langen Titel nicht abgeschnitten wird.
                     secondaryLabel = groupDetails(group)?.let { details ->
-                        { Text(details, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        { Text(details, maxLines = 2, overflow = TextOverflow.Ellipsis) }
                     },
                     label = { Text(group.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 )
