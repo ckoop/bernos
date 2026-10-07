@@ -58,6 +58,7 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import de.bernos.wear.BuildConfig
 import de.bernos.wear.PhoneConnection
 import de.bernos.wear.R
 import de.bernos.wearprotocol.WatchState
@@ -213,6 +214,14 @@ private fun RoomList(
                     colors = ButtonDefaults.outlinedButtonColors(),
                     icon = { Icon(painterResource(R.drawable.ic_refresh), contentDescription = null) },
                     label = { Text(stringResource(R.string.search_again)) },
+                )
+            }
+            item {
+                Text(
+                    stringResource(R.string.version, BuildConfig.VERSION_NAME),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("version"),
                 )
             }
         }

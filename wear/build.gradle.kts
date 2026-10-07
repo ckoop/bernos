@@ -15,8 +15,9 @@ android {
         applicationId = "de.bernos.app"
         minSdk = 30
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        // Version kommt aus gradle.properties (siehe build.gradle.kts im Wurzelverzeichnis).
+        versionCode = rootProject.extra["bernosVersionCodeBase"] as Int + 1 // 1 = Uhr
+        versionName = rootProject.extra["bernosVersionName"] as String
     }
 
     buildTypes {
@@ -34,6 +35,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {

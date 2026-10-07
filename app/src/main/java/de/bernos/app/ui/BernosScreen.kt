@@ -58,6 +58,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import de.bernos.app.BuildConfig
 import de.bernos.app.R
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
@@ -120,7 +121,13 @@ fun BernosScreen(state: SonosState, actions: BernosActions) {
                 )
             }
             if (selected == null) {
-                RoomList(state, actions::selectGroup, actions::addHost)
+                Box(Modifier.weight(1f)) { RoomList(state, actions::selectGroup, actions::addHost) }
+                Text(
+                    stringResource(R.string.version, BuildConfig.VERSION_NAME),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp),
+                )
             } else {
                 NowPlayingView(selected, state.rooms, state.nowPlaying, actions)
             }

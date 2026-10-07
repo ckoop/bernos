@@ -19,4 +19,5 @@
     <string name="control_room">Raum steuern</string>
     <string name="move_music_here">Musik hierher verschieben</string>
     <string name="volume_percent">Lautstärke %1$d</string>
+    <string name="version">Bernos %1$s</string>
 </resources>

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import de.bernos.app.BuildConfig
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -16,6 +17,7 @@ import de.bernos.sonos.TrackInfo
 import de.bernos.sonos.TransportState
 import de.bernos.sonos.ZoneGroup
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -67,6 +69,14 @@ class BernosScreenTest {
         compose.onNodeWithText("Bad").performClick()
 
         assertEquals(listOf("select:G2"), actions.calls)
+    }
+
+    @Test
+    fun raumliste_zeigt_die_versionsnummer() {
+        show(SonosState(groups = groups))
+
+        compose.onNodeWithText("Bernos ${BuildConfig.VERSION_NAME}").assertIsDisplayed()
+        assertTrue(Regex("\\d+\\.\\d+\\.\\d+").matches(BuildConfig.VERSION_NAME))
     }
 
     @Test

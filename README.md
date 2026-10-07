@@ -33,6 +33,11 @@ Die Ace-Kopfhörer lassen sich nicht über die App umschalten: Sonos bietet für
 Die Kommunikation läuft ausschließlich lokal im WLAN über die UPnP-Schnittstelle der
 Lautsprecher (HTTP, Port 1400). Es wird kein Sonos-Konto benötigt.
 
+## Version
+
+Handy- und Uhr-App tragen dieselbe Versionsnummer (`bernos.version` in `gradle.properties`),
+zu sehen am Ende der Raumliste.
+
 ## Bauen
 
 Voraussetzungen: JDK 17 und das Android SDK (z. B. über Android Studio).

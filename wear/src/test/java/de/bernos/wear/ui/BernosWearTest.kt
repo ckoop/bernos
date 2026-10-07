@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import de.bernos.wear.BuildConfig
 import de.bernos.wear.PhoneConnection
 import de.bernos.wearprotocol.WatchGroup
 import de.bernos.wearprotocol.WatchRoom
@@ -139,6 +140,14 @@ class BernosWearTest {
 
         state = state!!.copy(selectedGroupId = null)
         compose.onNodeWithText("Wohnzimmer + Küche").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Raumliste zeigt am Ende die Versionsnummer`() {
+        compose.setContent { BernosWear(WatchState(groups = groups), null, PhoneConnection.CONNECTED, RecordingActions()) }
+
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("version"))
+        compose.onNodeWithText("Bernos ${BuildConfig.VERSION_NAME}").assertIsDisplayed()
     }
 
     @Test

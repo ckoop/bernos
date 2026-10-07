@@ -19,6 +19,20 @@ App sind auf Deutsch. Bezeichner im Code bleiben Englisch.
 - Am Ende einer Phase `README.md` und `docs/ROADMAP.md` aktualisieren.
 - Ehrlich berichten, was getestet ist: automatische Tests ≠ Test an echten Lautsprechern.
 
+## Versionsnummer
+
+Handy und Uhr haben **eine gemeinsame** Version `<major>.<minor>.<patch>`, einzig gepflegt als
+`bernos.version` in `gradle.properties`. Das Wurzel-`build.gradle.kts` prüft das Format und leitet
+`versionCode` ab: `(major*10000 + minor*100 + patch) * 10 + Geräteziffer` (0 = Handy, 1 = Uhr).
+Angezeigt wird sie am Ende der Raumliste (Handy und Uhr).
+
+- Solange Bernos im Aufbau ist: `0.<Phase>.<Patch>`. Neue Phase → minor erhöhen, patch auf 0.
+- **patch** erhöhen bei jedem Push, der das Verhalten einer App ändert (Fehlerbehebung, kleine
+  Funktion). Reine Doku-, Test- oder CI-Änderungen erhöhen nichts.
+- **1.0.0**, wenn Phase 3 abgeschlossen und im Alltag stabil ist; danach klassisch SemVer
+  (major = inkompatible Änderung, z. B. neue Protokoll-Version zwischen Handy und Uhr).
+- Nach dem Erhöhen beide Apps installieren, weil sie zusammenpassen müssen.
+
 ## Projektaufbau
 
 | Modul | Inhalt |
