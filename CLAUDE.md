@@ -70,14 +70,18 @@ minSdk 26, compile/targetSdk 36. Versionen in `gradle/libs.versions.toml`
 
 - Phase 1 ✅ Suche, Steuerung, Titel/Cover, Live-Updates, Mediensitzung.
 - Phase 2 ✅ Gruppieren, Musik verschieben, Lautstärke pro Raum, mDNS.
-- **Noch nie an echten Sonos-Lautsprechern getestet.** Das ist der wichtigste nächste Schritt.
+- ✅ Erster Test an echten Geräten (07.10.2026, Xiaomi/POCO mit Android 16 und Galaxy Watch):
+  Raumsuche, Titel/Cover, Steuerung, Live-Updates bei Änderungen aus der Sonos-App,
+  Benachrichtigung, Uhr-Mediensteuerung, Lautstärketasten sowie Dazu/Entfernen/Hierher
+  funktionieren laut Nutzer. Nicht gezielt geprüft: welcher Suchweg (SSDP/mDNS/IP) gegriffen hat,
+  Radiosender.
 
 ## Todos
 
-1. **Test an echten Geräten** (Handy im selben WLAN, `./gradlew :app:installDebug` oder
-   `adb install`): Suche (SSDP/mDNS/IP), Titel und Cover inkl. Radio, Live-Updates bei Änderungen
-   aus der Sonos-App, Benachrichtigung + Uhr-Mediensteuerung, Lautstärketasten, Gruppieren,
-   Verschieben, Entfernen. Gefundene Abweichungen in `FakeSonosSystem` nachbilden und als Test festhalten.
+1. **Gerätetest vervollständigen**: Radiosender (Titel/Cover über `streamContent`) und die einzelnen
+   Suchwege prüfen. Installation: `adb install -r app/build/outputs/apk/debug/app-debug.apk`; auf
+   Xiaomi muss in den Entwickleroptionen „Über USB installieren“ aktiv sein und die Abfrage auf dem
+   Handy bestätigt werden. Gefundene Abweichungen in `FakeSonosSystem` nachbilden und als Test festhalten.
 2. **Phase 3 – Wear-OS-App**: neues Modul `wear` (Compose for Wear OS). Handy bleibt die Zentrale;
    Kommunikation über die Wearable Data Layer API (`MessageClient` für Befehle, `DataClient` für
    Status/Cover). Raumauswahl, Cover, Lautstärke über Drehkrone/Lünette, Tile, Komplikation.

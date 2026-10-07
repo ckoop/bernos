@@ -5,6 +5,8 @@ Fernbedienung. Bernos ist ein privates Projekt und steht in keiner Verbindung zu
 
 ## Stand: Phase 2
 
+An echten Sonos-Lautsprechern erfolgreich getestet (Android 16, Galaxy Watch als Uhr).
+
 - Findet die Sonos-Lautsprecher im WLAN automatisch (SSDP und mDNS); falls der Router das blockiert,
   lässt sich ein Lautsprecher per IP-Adresse hinzufügen.
 - Zeigt alle Räume bzw. Gruppen an.
@@ -49,3 +51,7 @@ Artefakt `bernos-debug-apk` zum Herunterladen.
 1. APK aus dem GitHub-Actions-Lauf herunterladen (oder selbst bauen).
 2. Auf dem Handy öffnen und die Installation aus unbekannten Quellen erlauben.
 3. Handy muss im selben WLAN wie die Sonos-Lautsprecher sein.
+
+Installation per `adb` auf Xiaomi/POCO: In den Entwickleroptionen „Über USB installieren“
+einschalten und die Abfrage auf dem Handy bestätigen, sonst bricht die Installation mit
+`INSTALL_FAILED_USER_RESTRICTED` ab.
