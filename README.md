@@ -11,11 +11,13 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy
 
 - Findet die Sonos-Lautsprecher im WLAN automatisch (SSDP und mDNS); falls der Router das blockiert,
   lässt sich ein Lautsprecher per IP-Adresse hinzufügen.
-- Zeigt alle Räume bzw. Gruppen an.
+- Zeigt alle Räume bzw. Gruppen an, jeweils mit **Cover und laufendem Titel** sowie dem
+  **Akkustand** tragbarer Lautsprecher (z. B. Sonos Roam).
 - **Räume gruppieren:** weitere Räume dazunehmen oder herausnehmen, Lautstärke pro Raum.
 - **Musik verschieben:** die laufende Musik mit einem Tipp in einen anderen Raum schicken.
 - Zeigt für den gewählten Raum Titel, Künstler, Album und **Albumcover** an, inkl. Fortschritt.
-- Abspielen/Pause, nächster/vorheriger Titel, Lautstärke der Gruppe, **Stummschalten**.
+- Abspielen/Pause, nächster/vorheriger Titel, Lautstärke der Gruppe, **Stummschalten**,
+  **Schlaftimer** (15 bis 90 Minuten).
 - **Sonos-Favoriten** ("Meine Sonos") mit Cover direkt abspielen: Radiosender sowie
   Playlists und Alben, z. B. von Spotify. Verknüpfungen (etwa Bereiche von Sonos Radio)
   gehen nur in der Sonos-App; Bernos weist darauf hin.
@@ -30,7 +32,8 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy
 Eigene Uhr-App, die über das Handy steuert (das Handy muss Bernos installiert haben und in der
 Nähe sein; es spricht mit Sonos, die Uhr nur mit dem Handy):
 
-- **Raumliste:** Raum zum Steuern wählen; laufende Räume sind markiert.
+- **Raumliste:** Raum zum Steuern wählen, mit laufendem Titel und Akkustand; dort auch der
+  **Schlaftimer**.
 - **Musik hierher verschieben:** laufende Musik in einen anderen Raum schicken.
 - **Wiedergabe:** Cover bzw. Senderlogo als Hintergrund, Titel, Künstler,
   Zurück/Abspielen/Weiter, **Lautstärke über die Lünette** bzw. Drehkrone, **Stummschalten**

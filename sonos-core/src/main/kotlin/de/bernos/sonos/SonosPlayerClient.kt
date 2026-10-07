@@ -97,6 +97,20 @@ class SonosPlayerClient(private val soap: SoapClient) {
         return Parsers.parseZoneGroups(state)
     }
 
+    /** Restzeit des Schlaftimers der Gruppe; `null`, wenn keiner läuft. */
+    suspend fun sleepTimerRemaining(coordinator: SonosDevice): Long? =
+        Parsers.parseDuration(avTransport(coordinator, "GetRemainingSleepTimerDuration")["RemainingSleepTimerDuration"])
+            ?.takeIf { it > 0 }
+
+    /** Schlaftimer stellen; [minutes] = `null` oder 0 schaltet ihn aus. Sonos stoppt dann von selbst. */
+    suspend fun setSleepTimer(coordinator: SonosDevice, minutes: Int?) {
+        val duration = minutes?.takeIf { it > 0 }?.let { "%02d:%02d:00".format(it / 60, it % 60) } ?: ""
+        avTransport(coordinator, "ConfigureSleepTimer", "NewSleepTimerDuration" to duration)
+    }
+
+    /** Akkustand; `null` bei Lautsprechern ohne Akku. */
+    suspend fun battery(device: SonosDevice): BatteryStatus? = Parsers.parseBattery(soap.get(device, "/status/batterystatus"))
+
     /** Sonos-Favoriten des ganzen Systems; jeder Lautsprecher kann sie liefern. */
     suspend fun favorites(anyDevice: SonosDevice): List<Favorite> {
         val result = soap.call(

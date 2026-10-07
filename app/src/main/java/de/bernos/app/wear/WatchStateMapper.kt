@@ -12,7 +12,21 @@ internal fun SonosState.toWatchState(): WatchState {
     return WatchState(
         groups = groups
             .sortedBy { it.name.lowercase() }
-            .map { WatchGroup(id = it.id, name = it.name, isPlaying = it.id == selectedGroupId && selectedPlaying?.isPlaying == true) },
+            .map { group ->
+                // Für die gewählte Gruppe ist die laufende Abfrage am frischesten.
+                val playback = groupPlayback[group.id]
+                val playing = if (group.id == selectedGroupId && selectedPlaying != null) selectedPlaying.isPlaying else playback?.isPlaying == true
+                val track = playback?.track
+                val battery = group.members.mapNotNull { batteries[it.uuid] }.minByOrNull { it.level }
+                WatchGroup(
+                    id = group.id,
+                    name = group.name,
+                    isPlaying = playing,
+                    nowPlaying = listOfNotNull(track?.title ?: track?.album, track?.artist).joinToString(" · ").ifEmpty { null },
+                    batteryLevel = battery?.level,
+                    charging = battery?.charging == true,
+                )
+            },
         selectedGroupId = selectedGroupId,
         title = selectedPlaying?.track?.title,
         artist = selectedPlaying?.track?.artist,
@@ -27,5 +41,6 @@ internal fun SonosState.toWatchState(): WatchState {
             rooms.filter { it.uuid != group.coordinator.uuid }.map { WatchRoom(uuid = it.uuid, name = it.roomName) }
         } ?: emptyList(),
         favorites = favorites.filter { it.isPlayable }.map { WatchFavorite(id = it.id, title = it.title) },
+        sleepTimerMinutes = selectedPlaying?.sleepTimerRemainingMs?.let { ((it + 59_999) / 60_000).toInt() },
     )
 }

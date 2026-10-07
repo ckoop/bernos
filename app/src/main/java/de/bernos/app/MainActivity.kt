@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
             override fun previous() = controller.previous()
             override fun setVolume(volume: Int) = controller.setVolume(volume)
             override fun toggleMute() = controller.toggleMuted()
+            override fun setSleepTimer(minutes: Int?) = controller.setSleepTimer(minutes)
             override fun setRoomVolume(roomUuid: String, volume: Int) = controller.setRoomVolume(roomUuid, volume)
             override fun addRoom(roomUuid: String) = controller.addRoomToGroup(roomUuid)
             override fun removeRoom(roomUuid: String) = controller.removeRoomFromGroup(roomUuid)
@@ -61,7 +62,14 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         val controller = sonos
         controller.resumeTracking()
+        // Raumliste: was in allen Räumen läuft und Akkustand, solange die App sichtbar ist.
+        controller.startOverview()
         if (controller.state.value.selectedGroupId != null) PlaybackService.start(this)
+    }
+
+    override fun onStop() {
+        sonos.stopOverview()
+        super.onStop()
     }
 
     private fun requestNotificationPermission() {

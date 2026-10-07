@@ -1,6 +1,8 @@
 package de.bernos.app.wear
 
+import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
+import de.bernos.sonos.GroupPlayback
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -68,6 +70,26 @@ class WatchStateMapperTest {
         assertNull(watch.title)
         assertNull(watch.volume)
         assertFalse(watch.isPlaying)
+    }
+
+    @Test
+    fun `Uebersicht, Akku und Schlaftimer gehen an die Uhr`() {
+        val state = SonosState(
+            groups = groups,
+            selectedGroupId = "G1",
+            nowPlaying = NowPlaying("G1", TransportState.PLAYING, null, null, null, 0, 20, false, sleepTimerRemainingMs = 24 * 60_000L + 1),
+            groupPlayback = mapOf("G2" to GroupPlayback(TransportState.PLAYING, TrackInfo("Roscoe", "Johnossi", null, null))),
+            batteries = mapOf("RINCON_3" to BatteryStatus(80, charging = true)),
+        )
+        val watch = state.toWatchState()
+        val bad = watch.groups.first { it.id == "G2" }
+
+        assertTrue(bad.isPlaying)
+        assertEquals("Roscoe · Johnossi", bad.nowPlaying)
+        assertEquals(80, bad.batteryLevel)
+        assertTrue(bad.charging)
+        assertNull(watch.groups.first { it.id == "G1" }.batteryLevel)
+        assertEquals(25, watch.sleepTimerMinutes)
     }
 
     @Test

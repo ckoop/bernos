@@ -76,6 +76,20 @@ internal object Parsers {
         }
     }
 
+    /**
+     * Akkustand aus `/status/batterystatus`. Lautsprecher ohne Akku liefern ein leeres
+     * `ZPSupportInfo` und ergeben `null`.
+     */
+    fun parseBattery(xml: String?): BatteryStatus? {
+        if (xml.isNullOrBlank()) return null
+        val doc = runCatching { Xml.parse(xml) }.getOrNull() ?: return null
+        val data = doc.descendants("Data").associate { it.getAttribute("name") to it.textContent.trim() }
+        val level = data["Level"]?.toIntOrNull() ?: return null
+        // BATTERY = läuft auf Akku; alles andere (Ladeschale, USB-C) bedeutet Strom.
+        val charging = data["PowerSource"]?.let { it != "BATTERY" } ?: false
+        return BatteryStatus(level = level.coerceIn(0, 100), charging = charging)
+    }
+
     fun resolveUrl(url: String, baseUrl: String): String = when {
         url.startsWith("http://") || url.startsWith("https://") -> url
         url.startsWith("/") -> baseUrl + url

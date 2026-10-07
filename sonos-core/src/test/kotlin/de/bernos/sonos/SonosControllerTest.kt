@@ -139,6 +139,43 @@ class SonosControllerTest {
     }
 
     @Test
+    fun `Uebersicht zeigt, was in jedem Raum laeuft, und den Akku`() = runBlocking {
+        fake.speaker("Bad").apply {
+            transport = "PAUSED_PLAYBACK"
+            title = "Song B"
+            battery = BatteryStatus(level = 37, charging = false)
+        }
+        controller.addHost(fake.speaker("Küche").address)
+        val state = awaitState("Übersicht geladen") { s ->
+            s.groups.size == 3 && s.groupPlayback.size == 3 && s.batteries.isNotEmpty()
+        }
+        val byRoom = state.groups.associate { it.coordinator.roomName to state.groupPlayback.getValue(it.id) }
+        assertEquals("Song A", byRoom.getValue("Wohnzimmer").track?.title)
+        assertTrue(byRoom.getValue("Wohnzimmer").isPlaying)
+        assertEquals("Song B", byRoom.getValue("Bad").track?.title)
+        assertEquals(false, byRoom.getValue("Bad").isPlaying)
+        assertEquals(TransportState.STOPPED, byRoom.getValue("Küche").transportState)
+        // Nur der Lautsprecher mit Akku taucht auf.
+        assertEquals(mapOf(uuid("Bad") to BatteryStatus(37, charging = false)), state.batteries)
+    }
+
+    @Test
+    fun `Schlaftimer stellen und ausschalten`() = runBlocking {
+        controller.addHost(fake.speaker("Wohnzimmer").address)
+        val state = awaitState("drei Räume") { it.groups.size == 3 }
+        controller.selectGroup(state.groups.first { it.coordinator.roomName == "Wohnzimmer" }.id)
+        awaitState("ohne Schlaftimer") { it.nowPlaying != null && it.nowPlaying?.sleepTimerRemainingMs == null }
+
+        controller.setSleepTimer(30)
+        awaitState("30 Minuten") { it.nowPlaying?.sleepTimerRemainingMs == 30 * 60_000L }
+        assertTrue(fake.calls.contains("Wohnzimmer:ConfigureSleepTimer"))
+
+        controller.setSleepTimer(null)
+        awaitState("Schlaftimer aus") { it.nowPlaying != null && it.nowPlaying?.sleepTimerRemainingMs == null }
+        Unit
+    }
+
+    @Test
     fun `gruppieren, Raumlautstaerke, Musik verschieben und Raum entfernen`() = runBlocking {
         controller.addHost(fake.speaker("Wohnzimmer").address)
         val initial = awaitState("drei Räume") { it.groups.size == 3 }

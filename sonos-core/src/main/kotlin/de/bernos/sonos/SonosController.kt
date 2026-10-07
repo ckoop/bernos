@@ -3,6 +3,9 @@ package de.bernos.sonos
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +27,10 @@ data class SonosState(
     val error: String? = null,
     /** Sonos-Favoriten, auch nicht abspielbare Verknüpfungen (siehe [Favorite.isPlayable]). */
     val favorites: List<Favorite> = emptyList(),
+    /** Was in jeder Gruppe läuft, nach Gruppen-ID – für die Raumliste. */
+    val groupPlayback: Map<String, GroupPlayback> = emptyMap(),
+    /** Akkustand tragbarer Lautsprecher, nach UUID. */
+    val batteries: Map<String, BatteryStatus> = emptyMap(),
 ) {
     val selectedGroup: ZoneGroup? get() = groups.firstOrNull { it.id == selectedGroupId }
 
@@ -52,6 +59,10 @@ class SonosController(
     private val knownHosts = linkedSetOf<String>()
     private val refreshMutex = Mutex()
     @Volatile private var trackingJob: Job? = null
+    @Volatile private var overviewJob: Job? = null
+
+    /** Lautsprecher ohne Akku; werden nicht erneut gefragt. */
+    private val withoutBattery: MutableSet<String> = java.util.Collections.synchronizedSet(mutableSetOf())
 
     @Volatile private var subscriptions: List<GenaSubscriber.Subscription> = emptyList()
 
@@ -95,14 +106,39 @@ class SonosController(
         if (added || _state.value.groups.isEmpty()) scope.launch { refreshTopology() }
     }
 
-    /** Lädt Raumaufteilung, Wiedergabe und Favoriten sofort neu, z. B. wenn die Uhr-App geöffnet wird. */
+    /** Lädt Raumaufteilung, Wiedergabe, Übersicht und Favoriten sofort neu, z. B. wenn die Uhr-App geöffnet wird. */
     fun refresh() {
         scope.launch {
             refreshTopology()
             refreshNowPlaying()
+            refreshOverview(withBatteries = true)
             refreshFavorites()
         }
     }
+
+    /**
+     * Fragt regelmäßig ab, was in allen Räumen läuft, und den Akkustand – solange eine Übersicht
+     * sichtbar ist (Raumliste). Mit [stopOverview] beenden.
+     */
+    fun startOverview() {
+        if (overviewJob?.isActive == true) return
+        overviewJob = scope.launch {
+            var round = 0
+            while (true) {
+                refreshOverview(withBatteries = round % BATTERY_EVERY_N_ROUNDS == 0)
+                round++
+                delay(OVERVIEW_INTERVAL_MS)
+            }
+        }
+    }
+
+    fun stopOverview() {
+        overviewJob?.cancel()
+        overviewJob = null
+    }
+
+    /** Schlaftimer der ausgewählten Gruppe; [minutes] = `null` schaltet ihn aus. */
+    fun setSleepTimer(minutes: Int?) = command { player.setSleepTimer(it.coordinator, minutes) }
 
     /** Lädt die Favoriten neu, z. B. wenn die Liste geöffnet wird; in der Sonos-App können sie sich ändern. */
     fun loadFavorites() {
@@ -329,12 +365,61 @@ class SonosController(
             // Eine frühere "Keine Lautsprecher gefunden"-Meldung ist jetzt überholt, andere Fehler bleiben stehen.
             val error = if (before.groups.isEmpty()) null else before.error
             _state.update { it.copy(groups = groups, selectedGroupId = selected?.id, error = error) }
-            if (before.groups.isEmpty()) refreshFavorites()
+            if (before.groups.isEmpty()) {
+                refreshFavorites()
+                refreshOverview(withBatteries = true)
+            }
             if (selected?.coordinator?.uuid != before.selectedGroup?.coordinator?.uuid) {
                 _state.update { it.copy(nowPlaying = null) }
                 startTracking()
             }
             return
+        }
+    }
+
+    /** Fehlt Album oder Cover (typisch bei Radio), helfen Name und Logo der Quelle aus. */
+    private suspend fun withSource(coordinator: SonosDevice, track: TrackInfo?): TrackInfo? {
+        if (track?.album != null && track.albumArtUrl != null) return track
+        val source = runCatching { player.sourceInfo(coordinator) }.getOrNull() ?: return track
+        val base = track ?: TrackInfo(null, null, null, null)
+        return base.copy(
+            album = base.album ?: source.title?.takeIf { it != base.title },
+            albumArtUrl = base.albumArtUrl ?: source.albumArtUrl,
+        )
+    }
+
+    /** Was läuft in jeder Gruppe, und (wenn gewünscht) der Akkustand tragbarer Lautsprecher. */
+    private suspend fun refreshOverview(withBatteries: Boolean) = coroutineScope {
+        val groups = _state.value.groups
+        if (groups.isEmpty()) return@coroutineScope
+        val playback = groups.map { group ->
+            async {
+                runCatching {
+                    val coordinator = group.coordinator
+                    val transport = player.transportState(coordinator)
+                    val track = withSource(coordinator, player.positionInfo(coordinator).track)
+                    group.id to GroupPlayback(transport, track)
+                }.getOrNull()
+            }
+        }.awaitAll().filterNotNull().toMap()
+        val batteries = if (withBatteries) {
+            groups.flatMap { it.members }.filter { it.uuid !in withoutBattery }.map { member ->
+                async {
+                    val battery = runCatching { player.battery(member) }.getOrNull()
+                    if (battery == null) withoutBattery += member.uuid
+                    battery?.let { member.uuid to it }
+                }
+            }.awaitAll().filterNotNull().toMap()
+        } else {
+            null
+        }
+        val ids = groups.map { it.id }.toSet()
+        _state.update {
+            it.copy(
+                // Gruppen, die es nicht mehr gibt, fallen heraus.
+                groupPlayback = (it.groupPlayback + playback).filterKeys { id -> id in ids },
+                batteries = batteries ?: it.batteries,
+            )
         }
     }
 
@@ -354,18 +439,8 @@ class SonosController(
                 } else {
                     volume?.let { mapOf(coordinator.uuid to it) } ?: emptyMap()
                 }
-                var track = position.track
-                // Fehlt Album oder Cover (typisch bei Radio), helfen Name und Logo der Quelle aus.
-                if (track?.album == null || track.albumArtUrl == null) {
-                    val source = runCatching { player.sourceInfo(coordinator) }.getOrNull()
-                    if (source != null) {
-                        val base = track ?: TrackInfo(null, null, null, null)
-                        track = base.copy(
-                            album = base.album ?: source.title?.takeIf { it != base.title },
-                            albumArtUrl = base.albumArtUrl ?: source.albumArtUrl,
-                        )
-                    }
-                }
+                val track = withSource(coordinator, position.track)
+                val sleepTimer = runCatching { player.sleepTimerRemaining(coordinator) }.getOrNull()
                 val nowPlaying = NowPlaying(
                     groupId = group.id,
                     transportState = transport,
@@ -376,8 +451,13 @@ class SonosController(
                     volume = volume,
                     muted = muted,
                     memberVolumes = memberVolumes,
+                    sleepTimerRemainingMs = sleepTimer,
                 )
-                _state.update { if (it.selectedGroupId == group.id) it.copy(nowPlaying = nowPlaying) else it }
+                _state.update {
+                    // Die Übersicht gleich mitpflegen, damit die Raumliste zur Wiedergabe passt.
+                    val playback = it.groupPlayback + (group.id to GroupPlayback(transport, track))
+                    if (it.selectedGroupId == group.id) it.copy(nowPlaying = nowPlaying, groupPlayback = playback) else it
+                }
             } catch (e: SonosException) {
                 _state.update { it.copy(error = e.message) }
             }
@@ -389,6 +469,9 @@ class SonosController(
         private const val TOPOLOGY_SETTLE_MS = 1_500L
         private const val POLL_WITH_EVENTS_MS = 15_000L
         private const val POLL_WITHOUT_EVENTS_MS = 3_000L
+        private const val OVERVIEW_INTERVAL_MS = 10_000L
+        /** Akku nur jede sechste Runde (etwa jede Minute) abfragen. */
+        private const val BATTERY_EVERY_N_ROUNDS = 6
         private const val RENEW_INTERVAL_MS = (GenaSubscriber.DEFAULT_TIMEOUT_SECONDS * 1000L) / 2
 
         fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()

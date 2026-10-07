@@ -10,8 +10,8 @@ class WearProtocolTest {
     fun `Zustand uebersteht Hin- und Rueckweg`() {
         val state = WatchState(
             groups = listOf(
-                WatchGroup("RINCON_1:5", "Wohnzimmer + Küche", isPlaying = true),
-                WatchGroup("RINCON_2:3", "Bad"),
+                WatchGroup("RINCON_1:5", "Wohnzimmer + Küche", isPlaying = true, nowPlaying = "Roscoe · Johnossi"),
+                WatchGroup("RINCON_2:3", "Bad", batteryLevel = 37, charging = true),
             ),
             selectedGroupId = "RINCON_1:5",
             title = "You Oughta Know",
@@ -24,6 +24,7 @@ class WearProtocolTest {
             error = "Bei dieser Quelle nicht möglich",
             moveTargets = listOf(WatchRoom("RINCON_2", "Küche"), WatchRoom("RINCON_3", "Bad")),
             favorites = listOf(WatchFavorite("FV:2/3", "STAR FM Maximum Rock Berlin")),
+            sleepTimerMinutes = 25,
         )
 
         val decoded = WatchState.decode(state.encode())
@@ -49,6 +50,8 @@ class WearProtocolTest {
             WatchCommand.SetVolume(42),
             WatchCommand.SetMuted(true),
             WatchCommand.SetMuted(false),
+            WatchCommand.SetSleepTimer(30),
+            WatchCommand.SetSleepTimer(0),
             WatchCommand.MoveTo("RINCON_3"),
             WatchCommand.PlayFavorite("FV:2/3"),
         )

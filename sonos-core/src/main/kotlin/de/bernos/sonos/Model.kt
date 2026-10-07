@@ -81,6 +81,22 @@ data class Favorite(
     }
 }
 
+/** Kurzer Wiedergabestand einer Gruppe für Übersichten (Raumliste). */
+data class GroupPlayback(
+    val transportState: TransportState,
+    val track: TrackInfo?,
+) {
+    val isPlaying: Boolean get() = transportState == TransportState.PLAYING
+}
+
+/** Akkustand eines tragbaren Lautsprechers (z. B. Sonos Roam oder Move). */
+data class BatteryStatus(
+    /** 0–100 Prozent. */
+    val level: Int,
+    /** Hängt am Strom bzw. steht auf der Ladeschale. */
+    val charging: Boolean,
+)
+
 /** Die gewählte Quelle, z. B. ein Radiosender mit seinem Logo. */
 data class SourceInfo(
     val title: String?,
@@ -100,6 +116,8 @@ data class NowPlaying(
     val muted: Boolean?,
     /** Lautstärke der einzelnen Räume der Gruppe, nach UUID. */
     val memberVolumes: Map<String, Int> = emptyMap(),
+    /** Restzeit des Schlaftimers; `null`, wenn keiner läuft. */
+    val sleepTimerRemainingMs: Long? = null,
 ) {
     val isPlaying: Boolean get() = transportState == TransportState.PLAYING
 

@@ -11,7 +11,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.bernos.app.BuildConfig
+import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
+import de.bernos.sonos.GroupPlayback
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -51,6 +53,7 @@ class BernosScreenTest {
         override fun previous() { calls += "previous" }
         override fun setVolume(volume: Int) { calls += "volume:$volume" }
         override fun toggleMute() { calls += "toggleMute" }
+        override fun setSleepTimer(minutes: Int?) { calls += "sleep:$minutes" }
         override fun setRoomVolume(roomUuid: String, volume: Int) { calls += "roomVolume:$roomUuid:$volume" }
         override fun addRoom(roomUuid: String) { calls += "add:$roomUuid" }
         override fun removeRoom(roomUuid: String) { calls += "remove:$roomUuid" }
@@ -168,5 +171,44 @@ class BernosScreenTest {
         show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = stumm))
 
         compose.onNodeWithContentDescription("Stummschaltung aufheben").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun raumliste_zeigt_was_laeuft_und_den_akku() {
+        val state = SonosState(
+            groups = groups,
+            groupPlayback = mapOf(
+                "G1" to GroupPlayback(TransportState.PLAYING, TrackInfo("Roscoe", "Johnossi", "STAR FM", null)),
+                "G2" to GroupPlayback(TransportState.PAUSED, TrackInfo("Get Lucky", "Daft Punk", null, null)),
+            ),
+            batteries = mapOf("RINCON_3" to BatteryStatus(level = 15, charging = false)),
+        )
+        show(state)
+
+        compose.onNodeWithText("▶ Roscoe · Johnossi").assertIsDisplayed()
+        compose.onNodeWithText("Get Lucky · Daft Punk").assertIsDisplayed()
+        compose.onNodeWithText("Akku 15 %").assertIsDisplayed()
+    }
+
+    @Test
+    fun schlaftimer_auswaehlen_und_restzeit_anzeigen() {
+        val nowPlaying = NowPlaying("G2", TransportState.PLAYING, null, null, null, 0, 40, false)
+        val actions = show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = nowPlaying))
+
+        compose.onNodeWithText("Schlaftimer").performScrollTo().performClick()
+        compose.onNodeWithText("30 Minuten").performClick()
+
+        assertEquals(listOf("loadFavorites", "sleep:30"), actions.calls)
+    }
+
+    @Test
+    fun laufender_schlaftimer_zeigt_restzeit_und_laesst_sich_ausschalten() {
+        val nowPlaying = NowPlaying("G2", TransportState.PLAYING, null, null, null, 0, 40, false, sleepTimerRemainingMs = 29 * 60_000L + 30_000L)
+        val actions = show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = nowPlaying))
+
+        compose.onNodeWithText("Aus in 30 Min.").performScrollTo().performClick()
+        compose.onNodeWithText("Schlaftimer aus").performClick()
+
+        assertEquals(listOf("loadFavorites", "sleep:null"), actions.calls)
     }
 }

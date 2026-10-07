@@ -17,6 +17,10 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
         @Volatile var coordinatorUuid: String = uuid
         @Volatile var volume: Int = 20
         @Volatile var muted: Boolean = false
+        /** Akkustand wie beim Sonos Roam; `null` = Lautsprecher ohne Akku. */
+        @Volatile var battery: BatteryStatus? = null
+        /** Restzeit des Schlaftimers im Format H:MM:SS, leer = aus. */
+        @Volatile var sleepTimer: String = ""
         @Volatile var transport: String = "STOPPED"
         @Volatile var title: String? = null
         /** Radiosender wie bei TuneIn: Logo nur in den Metadaten der Quelle, nicht beim Titel. */
@@ -54,6 +58,7 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
     override fun close() = speakers.forEach { runCatching { it.server.shutdown() } }
 
     private fun handle(speaker: Speaker, request: RecordedRequest): MockResponse = synchronized(lock) {
+        if (request.method == "GET" && request.path == "/status/batterystatus") return MockResponse().setBody(batteryXml(speaker))
         if (request.method != "POST") return MockResponse().setResponseCode(412) // keine Ereignisse
         val action = request.getHeader("SOAPACTION")!!.trim('"').substringAfter('#')
         val args = Xml.parse(request.body.readUtf8()).descendants(action).first().childElements()
@@ -71,6 +76,10 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
                 "RelTime" to "0:01:00",
                 "TrackMetaData" to (coordinator.radio?.let { radioTrackDidl(it) } ?: coordinator.title?.let { didl(it) } ?: ""),
             )
+            "GetRemainingSleepTimerDuration" -> listOf("RemainingSleepTimerDuration" to coordinator.sleepTimer)
+            "ConfigureSleepTimer" -> emptyList<Pair<String, String>>().also {
+                coordinator.sleepTimer = args.getValue("NewSleepTimerDuration").let { d -> if (d.isEmpty()) "" else d.trimStart('0').let { t -> if (t.startsWith(":")) "0$t" else t } }
+            }
             "Browse" -> listOf("Result" to favoritesDidl(), "NumberReturned" to favorites.size.toString())
             "RemoveAllTracksFromQueue" -> emptyList<Pair<String, String>>().also { coordinator.queue.clear() }
             "AddURIToQueue" -> emptyList<Pair<String, String>>().also {
@@ -152,6 +161,16 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
     private fun didl(title: String) =
         "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\">" +
             "<item><dc:title>${Xml.escape(title)}</dc:title><dc:creator>Testband</dc:creator></item></DIDL-Lite>"
+
+    // Aufbau wie die echte Statusseite eines Sonos Roam (Oktober 2026).
+    private fun batteryXml(speaker: Speaker): String = buildString {
+        append("<?xml version=\"1.0\" ?><ZPSupportInfo>")
+        speaker.battery?.let {
+            append("<LocalBatteryStatus><Data name=\"Health\">GREEN</Data><Data name=\"Level\">${it.level}</Data>")
+            append("<Data name=\"PowerSource\">${if (it.charging) "SONOS_CHARGING_RING" else "BATTERY"}</Data></LocalBatteryStatus>")
+        }
+        append("</ZPSupportInfo>")
+    }
 
     private fun titleOf(didl: String?): String? =
         didl?.takeIf { it.isNotBlank() }?.let { runCatching { Xml.parse(it).firstText("title") }.getOrNull() }

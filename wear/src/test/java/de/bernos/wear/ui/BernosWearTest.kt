@@ -49,6 +49,7 @@ class BernosWearTest {
         override fun previous() { calls += "previous" }
         override fun setVolume(volume: Int) { calls += "volume:$volume" }
         override fun setMuted(muted: Boolean) { calls += "muted:$muted" }
+        override fun setSleepTimer(minutes: Int) { calls += "sleep:$minutes" }
         override fun moveTo(roomUuid: String) { calls += "move:$roomUuid" }
         override fun playFavorite(favoriteId: String) { calls += "favorite:$favoriteId" }
         override fun refresh() { calls += "refresh" }
@@ -210,6 +211,36 @@ class BernosWearTest {
         compose.onNodeWithTag("abspielen").performTouchInput { longClick() }
 
         assertEquals(listOf("muted:false"), actions.calls)
+    }
+
+    @Test
+    fun `Raumliste zeigt was laeuft und den Akku`() {
+        val state = WatchState(
+            groups = listOf(
+                WatchGroup("G1", "Wohnzimmer", isPlaying = true, nowPlaying = "Roscoe · Johnossi"),
+                WatchGroup("G2", "Sonos Roam", nowPlaying = "Get Lucky", batteryLevel = 80, charging = false),
+            ),
+        )
+        compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, RecordingActions()) }
+
+        compose.onNodeWithText("▶ Roscoe · Johnossi").assertIsDisplayed()
+        compose.onNodeWithText("Get Lucky · Akku 80 %").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Schlaftimer ueber die Raumliste stellen`() {
+        val actions = RecordingActions()
+        val state = WatchState(groups = groups, selectedGroupId = "G1", title = "Song", isPlaying = true, volume = 30, sleepTimerMinutes = 12)
+        compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, actions) }
+
+        compose.onNodeWithTag("raum").performClick()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("schlaftimer"))
+        compose.onNodeWithText("Aus in 12 Min.").assertIsDisplayed()
+        compose.onNodeWithTag("schlaftimer").performClick()
+        compose.onNodeWithText("30 Minuten").performClick()
+
+        assertEquals(listOf("sleep:30"), actions.calls)
+        compose.onNodeWithText("Song").assertIsDisplayed()
     }
 
     @Test

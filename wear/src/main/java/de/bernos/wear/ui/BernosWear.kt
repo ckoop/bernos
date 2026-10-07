@@ -68,6 +68,7 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import de.bernos.wear.BuildConfig
 import de.bernos.wear.PhoneConnection
 import de.bernos.wear.R
+import de.bernos.wearprotocol.WatchGroup
 import de.bernos.wearprotocol.WatchState
 
 interface WearActions {
@@ -77,6 +78,7 @@ interface WearActions {
     fun previous()
     fun setVolume(volume: Int)
     fun setMuted(muted: Boolean)
+    fun setSleepTimer(minutes: Int)
     fun moveTo(roomUuid: String)
     fun playFavorite(favoriteId: String)
     fun refresh()
@@ -86,6 +88,7 @@ interface WearActions {
 private const val HOME = "home"
 private const val ROOMS = "rooms"
 private const val FAVORITES = "favorites"
+private const val SLEEP_TIMER = "sleepTimer"
 
 @Composable
 fun BernosWear(state: WatchState?, cover: ImageBitmap?, connection: PhoneConnection, actions: WearActions) {
@@ -131,7 +134,15 @@ fun BernosWear(state: WatchState?, cover: ImageBitmap?, connection: PhoneConnect
                             actions.moveTo(uuid)
                             navController.popBackStack()
                         },
+                        onOpenSleepTimer = { navController.navigate(SLEEP_TIMER) },
                     )
+                }
+                composable(SLEEP_TIMER) {
+                    SleepTimerList(currentState ?: WatchState()) { minutes ->
+                        actions.setSleepTimer(minutes)
+                        // Zurück zur Wiedergabe, nicht nur zur Raumliste.
+                        navController.popBackStack(HOME, inclusive = false)
+                    }
                 }
             }
         }
@@ -180,6 +191,7 @@ private fun RoomList(
     onSelect: (String) -> Unit,
     onRefresh: () -> Unit,
     onMoveTo: ((String) -> Unit)? = null,
+    onOpenSleepTimer: (() -> Unit)? = null,
 ) {
     val listState = rememberScalingLazyListState()
     ScreenScaffold(scrollState = listState) { contentPadding ->
@@ -204,10 +216,8 @@ private fun RoomList(
                         ButtonDefaults.filledTonalButtonColors()
                     },
                     icon = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = null) },
-                    secondaryLabel = if (group.isPlaying) {
-                        { Text(stringResource(R.string.playing)) }
-                    } else {
-                        null
+                    secondaryLabel = groupDetails(group)?.let { details ->
+                        { Text(details, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     },
                     label = { Text(group.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 )
@@ -223,6 +233,23 @@ private fun RoomList(
                         colors = ButtonDefaults.outlinedButtonColors(),
                         icon = { Icon(painterResource(R.drawable.ic_move_here), contentDescription = null) },
                         label = { Text(room.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                    )
+                }
+            }
+            if (onOpenSleepTimer != null && state.selectedGroup != null) {
+                item {
+                    Button(
+                        onClick = onOpenSleepTimer,
+                        modifier = Modifier.fillMaxWidth().testTag("schlaftimer"),
+                        colors = ButtonDefaults.filledTonalButtonColors(),
+                        icon = { Icon(painterResource(R.drawable.ic_timer), contentDescription = null) },
+                        secondaryLabel = {
+                            Text(
+                                state.sleepTimerMinutes?.let { stringResource(R.string.sleep_timer_remaining, it) }
+                                    ?: stringResource(R.string.sleep_timer_off_state),
+                            )
+                        },
+                        label = { Text(stringResource(R.string.sleep_timer)) },
                     )
                 }
             }
@@ -249,6 +276,56 @@ private fun RoomList(
         }
     }
 }
+
+/** Zweite Zeile eines Raums: was läuft und, bei tragbaren Lautsprechern, der Akku. */
+@Composable
+private fun groupDetails(group: WatchGroup): String? {
+    val playing = group.nowPlaying?.let { if (group.isPlaying) "▶ $it" else it }
+        ?: stringResource(R.string.playing).takeIf { group.isPlaying }
+    val battery = group.batteryLevel?.let {
+        stringResource(if (group.charging) R.string.battery_charging else R.string.battery_level, it)
+    }
+    return listOfNotNull(playing, battery).joinToString(" · ").ifEmpty { null }
+}
+
+@Composable
+private fun SleepTimerList(state: WatchState, onSet: (Int) -> Unit) {
+    val listState = rememberScalingLazyListState()
+    ScreenScaffold(scrollState = listState) { contentPadding ->
+        ScalingLazyColumn(state = listState, contentPadding = contentPadding, modifier = Modifier.fillMaxSize()) {
+            item { ListHeader { Text(stringResource(R.string.sleep_timer)) } }
+            state.sleepTimerMinutes?.let { remaining ->
+                item {
+                    Text(
+                        stringResource(R.string.sleep_timer_remaining, remaining),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+            items(SLEEP_TIMER_MINUTES) { minutes ->
+                Button(
+                    onClick = { onSet(minutes) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.filledTonalButtonColors(),
+                    label = { Text(stringResource(R.string.minutes, minutes)) },
+                )
+            }
+            if (state.sleepTimerMinutes != null) {
+                item {
+                    Button(
+                        onClick = { onSet(0) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(),
+                        label = { Text(stringResource(R.string.sleep_timer_turn_off)) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val SLEEP_TIMER_MINUTES = listOf(15, 30, 45, 60, 90)
 
 @Composable
 private fun FavoriteList(state: WatchState, onPlay: (String) -> Unit) {

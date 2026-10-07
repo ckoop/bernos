@@ -129,6 +129,11 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
 - Stummschalten ✅ (0.4.4/0.4.5): Handy über das Lautsprecher-Symbol neben der Gruppenlautstärke;
   Uhr über langes Drücken auf Abspielen (Vibration, rote Lautstärkeanzeige, Stumm-Zeichen am
   Knopf; Protokoll Version 4 mit `muted` und `SetMuted`).
+- Raumübersicht, Schlaftimer, Akku ✅ (0.4.7): `SonosState.groupPlayback` (was läuft je Gruppe)
+  und `batteries` (Akku tragbarer Lautsprecher aus `/status/batterystatus`, Roam liefert
+  `Level`/`PowerSource`); `startOverview()`/`stopOverview()` fragt alle 10 s ab (Akku jede Minute),
+  solange die Handy-App sichtbar ist, sonst bei `refresh()` (Herzschlag der Uhr). Schlaftimer über
+  `ConfigureSleepTimer`/`GetRemainingSleepTimerDuration`. Protokoll Version 5.
 - Phase 4 ✅ Sonos-Favoriten (07.10.2026, Version 0.4.3): Browse `FV:2`, Sender direkt,
   Playlists/Alben über die Warteschlange – beides an echten Geräten bestätigt (TuneIn-Sender,
   Spotify-Playlist). Handy: Reihe "Favoriten"; Uhr: Stern-Knopf neben dem Raum (unten war auf
@@ -150,10 +155,21 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
    Schnittstelle; die Ace hängt per Bluetooth am Handy, nicht im WLAN. Optionen: Content-Taste
    (geht heute), Sonos-App per Bedienungshilfe fernsteuern (fragil), Bluetooth-Protokoll
    analysieren (aufwendig). Vor jedem Aufwand mit dem Nutzer abstimmen.
-3. Kleinere offene Punkte:
+3. **Ideen (vom Nutzer gesammelt, noch nicht beauftragt)**:
+   - TV-Ton umschalten (Soundbar zurück auf den TV-Eingang, `x-sonos-htastream:`), dazu Nachtmodus
+     und Sprachverbesserung – falls im Wohnzimmer eine Soundbar steht.
+   - Spulen im Titel: Tippen/Ziehen in der Fortschrittsleiste (AVTransport `Seek` mit `REL_TIME`).
+   - Warteschlange ansehen und direkt einen Titel abspielen (`Browse("Q:0")`, `Seek` `TRACK_NR`).
+   - Zufall und Wiederholen als Schalter (`SetPlayMode`).
+   - Klangeinstellungen pro Raum: Bässe, Höhen, Loudness (RenderingControl).
+   - "Überall abspielen": alle Räume mit einem Tipp zu einer Gruppe verbinden und wieder trennen.
+   - Handy-Widget für den Startbildschirm (Cover, Play/Pause), z. B. mit Glance.
+   - Schnelleinstellungen-Kachel auf dem Handy (`TileService` für Quick Settings).
+   - App-Verknüpfungen (lange auf das Bernos-Symbol drücken → Favorit starten).
+   - Uhr: Favoriten-Kachel mit zwei, drei Favoriten zum direkten Antippen.
+4. Kleinere offene Punkte:
    - Release-Signatur einrichten (Release nutzt derzeit den Debug-Schlüssel).
    - Ab Android 17 (API 37) prüfen, ob eine Berechtigung für das lokale Netz nötig ist.
-   - Raumliste zeigt noch nicht, was in den einzelnen Räumen läuft.
    - Raumlautstärke wird nur per Polling aktualisiert (keine RenderingControl-Abos pro Mitglied).
    - Lint ist nicht Teil der CI; bei Gelegenheit `:app:lintDebug` aufnehmen und Befunde beheben.
    - Uhr: ungeprüft, ob sich Kachel/Komplikation bei geschlossener Uhr-App aktualisieren, wenn

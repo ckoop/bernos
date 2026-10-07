@@ -22,7 +22,7 @@ object WearProtocol {
     const val PHONE_CAPABILITY = "bernos_phone"
 
     /** Format-Version; bei inkompatiblen Änderungen erhöhen. */
-    const val VERSION = 4
+    const val VERSION = 5
 }
 
 /** Ein Raum bzw. eine Gruppe, wie die Uhr sie in der Liste zeigt. */
@@ -30,6 +30,11 @@ data class WatchGroup(
     val id: String,
     val name: String,
     val isPlaying: Boolean = false,
+    /** Was gerade läuft bzw. zuletzt lief, kurz ("Titel · Künstler"). */
+    val nowPlaying: String? = null,
+    /** Niedrigster Akkustand der Gruppe in Prozent; `null` ohne tragbaren Lautsprecher. */
+    val batteryLevel: Int? = null,
+    val charging: Boolean = false,
 )
 
 /** Ein einzelner Raum, in den sich die laufende Musik verschieben lässt. */
@@ -62,6 +67,8 @@ data class WatchState(
     val moveTargets: List<WatchRoom> = emptyList(),
     /** Nur abspielbare Favoriten; Verknüpfungen gehen ohnehin nur in der Sonos-App. */
     val favorites: List<WatchFavorite> = emptyList(),
+    /** Restminuten des Schlaftimers der gewählten Gruppe (aufgerundet); `null` = aus. */
+    val sleepTimerMinutes: Int? = null,
 ) {
     val selectedGroup: WatchGroup? get() = groups.firstOrNull { it.id == selectedGroupId }
 
@@ -72,6 +79,9 @@ data class WatchState(
             out.writeUTF(it.id)
             out.writeUTF(it.name)
             out.writeBoolean(it.isPlaying)
+            out.writeNullable(it.nowPlaying)
+            out.writeInt(it.batteryLevel ?: -1)
+            out.writeBoolean(it.charging)
         }
         out.writeNullable(selectedGroupId)
         out.writeNullable(title)
@@ -93,6 +103,7 @@ data class WatchState(
             out.writeUTF(it.id)
             out.writeUTF(it.title)
         }
+        out.writeInt(sleepTimerMinutes ?: -1)
     }
 
     companion object {
@@ -100,7 +111,14 @@ data class WatchState(
         fun decode(bytes: ByteArray): WatchState? = read(bytes) { input ->
             if (input.readInt() != WearProtocol.VERSION) return@read null
             val groups = List(input.readInt()) {
-                WatchGroup(id = input.readUTF(), name = input.readUTF(), isPlaying = input.readBoolean())
+                WatchGroup(
+                    id = input.readUTF(),
+                    name = input.readUTF(),
+                    isPlaying = input.readBoolean(),
+                    nowPlaying = input.readNullable(),
+                    batteryLevel = input.readInt().takeIf { it >= 0 },
+                    charging = input.readBoolean(),
+                )
             }
             WatchState(
                 groups = groups,
@@ -116,6 +134,7 @@ data class WatchState(
                 error = input.readNullable(),
                 moveTargets = List(input.readInt()) { WatchRoom(uuid = input.readUTF(), name = input.readUTF()) },
                 favorites = List(input.readInt()) { WatchFavorite(id = input.readUTF(), title = input.readUTF()) },
+                sleepTimerMinutes = input.readInt().takeIf { it >= 0 },
             )
         }
     }
@@ -132,6 +151,8 @@ sealed interface WatchCommand {
     data object Previous : WatchCommand
     data class SetVolume(val volume: Int) : WatchCommand
     data class SetMuted(val muted: Boolean) : WatchCommand
+    /** Schlaftimer der gewählten Gruppe; 0 schaltet ihn aus. */
+    data class SetSleepTimer(val minutes: Int) : WatchCommand
     /** Laufende Musik der gewählten Gruppe in diesen Raum verschieben; der bisherige Raum verstummt. */
     data class MoveTo(val roomUuid: String) : WatchCommand
     /** Favoriten in der gewählten Gruppe abspielen. */
@@ -157,6 +178,10 @@ sealed interface WatchCommand {
                 out.writeUTF("mute")
                 out.writeBoolean(muted)
             }
+            is SetSleepTimer -> {
+                out.writeUTF("sleep")
+                out.writeInt(minutes)
+            }
             is MoveTo -> {
                 out.writeUTF("move")
                 out.writeUTF(roomUuid)
@@ -181,6 +206,7 @@ sealed interface WatchCommand {
                 "previous" -> Previous
                 "volume" -> SetVolume(input.readInt().coerceIn(0, 100))
                 "mute" -> SetMuted(input.readBoolean())
+                "sleep" -> SetSleepTimer(input.readInt().coerceIn(0, 24 * 60))
                 "move" -> MoveTo(input.readUTF())
                 "favorite" -> PlayFavorite(input.readUTF())
                 else -> null

@@ -118,6 +118,25 @@ class ParsersTest {
     }
 
     @Test
+    fun `Akku - echte Statusseite eines Roam, Lautsprecher ohne Akku ergibt null`() {
+        val roam = """
+            <?xml version="1.0" ?>
+            <?xml-stylesheet type="text/xsl" href="/xml/review.xsl"?><ZPSupportInfo><LocalBatteryStatus>
+            <Data name="Health">GREEN</Data>
+            <Data name="Level">100</Data>
+            <Data name="Temperature">HOT</Data>
+            <Data name="PowerSource">SONOS_CHARGING_RING</Data>
+            </LocalBatteryStatus><!-- SDT: 0 ms --></ZPSupportInfo>
+        """.trimIndent()
+        assertEquals(BatteryStatus(level = 100, charging = true), Parsers.parseBattery(roam))
+        assertEquals(
+            BatteryStatus(level = 42, charging = false),
+            Parsers.parseBattery(roam.replace(">100<", ">42<").replace("SONOS_CHARGING_RING", "BATTERY")),
+        )
+        assertNull(Parsers.parseBattery("<?xml version=\"1.0\" ?><ZPSupportInfo></ZPSupportInfo>"))
+    }
+
+    @Test
     fun `leere Metadaten ergeben null`() {
         assertNull(Parsers.parseTrackMetadata("", base))
         assertNull(Parsers.parseTrackMetadata("NOT_IMPLEMENTED", base))

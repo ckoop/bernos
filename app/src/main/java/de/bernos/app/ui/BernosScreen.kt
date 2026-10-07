@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
@@ -65,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import de.bernos.app.BuildConfig
 import de.bernos.app.R
+import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
@@ -82,6 +85,7 @@ interface BernosActions {
     fun previous()
     fun setVolume(volume: Int)
     fun toggleMute()
+    fun setSleepTimer(minutes: Int?)
     fun setRoomVolume(roomUuid: String, volume: Int)
     fun addRoom(roomUuid: String)
     fun removeRoom(roomUuid: String)
@@ -149,12 +153,37 @@ private fun RoomList(state: SonosState, onSelectGroup: (String) -> Unit, onAddHo
     when {
         state.groups.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
             items(state.groups, key = { it.id }) { group ->
+                val playback = state.groupPlayback[group.id]
+                val track = playback?.track
+                val battery = group.members.mapNotNull { state.batteries[it.uuid] }.minByOrNull { it.level }
                 ListItem(
                     headlineContent = { Text(group.name) },
                     supportingContent = {
-                        if (group.members.size > 1) Text(stringResource(R.string.speakers_count, group.members.size))
+                        // Was läuft, sonst die Zahl der Lautsprecher.
+                        val nowPlaying = listOfNotNull(track?.title ?: track?.album, track?.artist).joinToString(" · ")
+                        when {
+                            nowPlaying.isNotEmpty() -> Text(
+                                if (playback?.isPlaying == true) "▶ $nowPlaying" else nowPlaying,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            group.members.size > 1 -> Text(stringResource(R.string.speakers_count, group.members.size))
+                        }
                     },
-                    leadingContent = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = null) },
+                    leadingContent = {
+                        val art = track?.albumArtUrl
+                        if (art != null) {
+                            AsyncImage(
+                                model = art,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)),
+                            )
+                        } else {
+                            Icon(painterResource(R.drawable.ic_speaker), contentDescription = null)
+                        }
+                    },
+                    trailingContent = battery?.let { { BatteryLabel(it) } },
                     modifier = Modifier.clickable { onSelectGroup(group.id) },
                 )
                 HorizontalDivider()
@@ -174,6 +203,23 @@ private fun RoomList(state: SonosState, onSelectGroup: (String) -> Unit, onAddHo
         else -> ManualHostForm(onAddHost)
     }
 }
+
+/** Akkustand eines tragbaren Lautsprechers; unter 20 % in Warnfarbe. */
+@Composable
+private fun BatteryLabel(battery: BatteryStatus) {
+    val text = if (battery.charging) {
+        stringResource(R.string.battery_charging, battery.level)
+    } else {
+        stringResource(R.string.battery_level, battery.level)
+    }
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = if (!battery.charging && battery.level < LOW_BATTERY) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+private const val LOW_BATTERY = 20
 
 /** Fallback, wenn Router oder Firewall die automatische Suche (Multicast) blockieren. */
 @Composable
@@ -270,13 +316,57 @@ private fun NowPlayingView(
         nowPlaying?.volume?.let { volume ->
             VolumeSlider(group.id, volume, actions::setVolume, muted = nowPlaying.muted == true, onToggleMute = actions::toggleMute)
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(8.dp))
+        SleepTimerButton(nowPlaying?.sleepTimerRemainingMs, actions::setSleepTimer)
+        Spacer(Modifier.height(16.dp))
 
         FavoritesSection(favorites, actions::playFavorite)
 
         RoomsSection(group, allRooms, nowPlaying, actions)
     }
 }
+
+/** Knopf mit Restzeit; öffnet eine Auswahl der Dauer. Sonos stoppt danach von selbst. */
+@Composable
+private fun SleepTimerButton(remainingMs: Long?, onSet: (Int?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { expanded = true }) {
+            Icon(painterResource(R.drawable.ic_timer), contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                if (remainingMs == null) {
+                    stringResource(R.string.sleep_timer)
+                } else {
+                    // Aufrunden: Bei 29:30 Restzeit "noch 30 Min".
+                    stringResource(R.string.sleep_timer_remaining, ((remainingMs + 59_999) / 60_000).toInt())
+                },
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            SLEEP_TIMER_MINUTES.forEach { minutes ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.minutes, minutes)) },
+                    onClick = {
+                        expanded = false
+                        onSet(minutes)
+                    },
+                )
+            }
+            if (remainingMs != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.sleep_timer_off)) },
+                    onClick = {
+                        expanded = false
+                        onSet(null)
+                    },
+                )
+            }
+        }
+    }
+}
+
+private val SLEEP_TIMER_MINUTES = listOf(15, 30, 45, 60, 90)
 
 /** Sonos-Favoriten als waagerechte Reihe; Verknüpfungen gehen nur in der Sonos-App und fehlen hier. */
 @Composable

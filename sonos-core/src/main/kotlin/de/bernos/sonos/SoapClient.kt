@@ -67,6 +67,16 @@ class SoapClient(private val http: OkHttpClient) {
         parseResponse(body, action)
     }
 
+    /** Einfache GET-Abfrage, z. B. für Statusseiten wie `/status/batterystatus`; `null` bei Fehlern. */
+    suspend fun get(device: SonosDevice, path: String): String? = withContext(Dispatchers.IO) {
+        val request = Request.Builder().url(device.baseUrl + path).get().build()
+        try {
+            http.newCall(request).execute().use { response -> if (response.isSuccessful) response.body?.string() else null }
+        } catch (e: IOException) {
+            null
+        }
+    }
+
     internal companion object {
         private val XML = "text/xml; charset=\"utf-8\"".toMediaType()
 
