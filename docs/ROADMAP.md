@@ -27,14 +27,16 @@ Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wea
   Steuerknöpfen; Komplikation (kurzer/langer Text) mit dem laufenden Titel.
 - Bewusst weggelassen: weitere Komplikationsformen (nur Symbol, kleines Cover-Bild).
 
-## Phase 4 – Sonos-Favoriten
+## Phase 4 – Sonos-Favoriten ✅
 - Favoriten ("Meine Sonos") über ContentDirectory `Browse("FV:2")` lesen.
 - Abspielen im gewählten Raum: Radiosender direkt (`SetAVTransportURI` mit den Metadaten aus
   `r:resMD`), Playlists/Alben über die Warteschlange (`RemoveAllTracksFromQueue`,
   `AddURIToQueue`, `x-rincon-queue:`), danach `Play`.
 - Verknüpfungen (`r:type` = `shortcut`, z. B. Bereiche von Sonos Radio) haben keine Adresse und
   gehen nur in der Sonos-App; Bernos weist darauf hin.
-- Handy: Reihe "Favoriten" in der Wiedergabe. Uhr: Knopf "Favoriten" in der Wiedergabe.
+- Handy: Reihe "Favoriten" in der Wiedergabe. Uhr: Stern-Knopf neben dem Raum.
+- An echten Geräten getestet (07.10.2026): Radiosender (TuneIn) und Spotify-Playlist als
+  Favorit, auf Handy und Uhr.
 
 ## Optional – Spotify-Login
 Spotify-Playlists, gespeicherte Alben und Suche direkt in Bernos (Handy und Uhr). Lokal über Sonos

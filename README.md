@@ -3,7 +3,7 @@
 Bernos ist eine Android-App zur Steuerung von Sonos-Lautsprechern, mit Wear-OS-Uhr als
 Fernbedienung. Bernos ist ein privates Projekt und steht in keiner Verbindung zu Sonos, Inc.
 
-## Stand: Phase 3 abgeschlossen (Version 0.3.3)
+## Stand: Phase 4 abgeschlossen (Version 0.4.3)
 
 An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy Watch7).
 
@@ -16,6 +16,9 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy
 - **Musik verschieben:** die laufende Musik mit einem Tipp in einen anderen Raum schicken.
 - Zeigt für den gewählten Raum Titel, Künstler, Album und **Albumcover** an, inkl. Fortschritt.
 - Abspielen/Pause, nächster/vorheriger Titel, Lautstärke der Gruppe.
+- **Sonos-Favoriten** ("Meine Sonos") mit Cover direkt abspielen: Radiosender sowie
+  Playlists und Alben, z. B. von Spotify. Verknüpfungen (etwa Bereiche von Sonos Radio)
+  gehen nur in der Sonos-App; Bernos weist darauf hin.
 - Live-Aktualisierung: Die Lautsprecher melden Änderungen von selbst (UPnP-Ereignisse);
   zusätzlich fragt die App regelmäßig nach, falls Ereignisse nicht ankommen.
 - Mediensitzung: Titel, Cover und Steuerung erscheinen in der Benachrichtigung, auf dem
@@ -34,7 +37,7 @@ Nähe sein; es spricht mit Sonos, die Uhr nur mit dem Handy):
 - **Kachel** neben dem Zifferblatt: Bernos, Raum, Titel mit Cover im Hintergrund und
   Steuerknöpfe – ohne die App zu öffnen.
 - **Komplikation** fürs Zifferblatt (kurzer oder langer Text) mit dem laufenden Titel.
-- **Favoriten** über den Stern neben dem Raum.
+- **Favoriten** über den Stern neben dem Raum abspielen.
 
 **Einschränkung:** Das Medien-Symbol unten auf dem Zifferblatt gehört zur System-Mediensteuerung
 von Wear OS und öffnet deren Player, nicht Bernos. Wear OS übernimmt die Wiedergabe des Handys
