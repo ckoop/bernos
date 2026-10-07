@@ -133,7 +133,13 @@ class SonosController(
         command(refreshAfter = false) { player.setGroupVolume(it.coordinator, clamped) }
     }
 
-    fun setMuted(muted: Boolean) = command { player.setGroupMute(it.coordinator, muted) }
+    fun setMuted(muted: Boolean) {
+        // Sofort anzeigen; die nächste Abfrage bestätigt den Wert.
+        _state.update { s -> s.copy(nowPlaying = s.nowPlaying?.copy(muted = muted)) }
+        command { player.setGroupMute(it.coordinator, muted) }
+    }
+
+    fun toggleMuted() = setMuted(_state.value.nowPlaying?.muted != true)
 
     /** Lautstärke eines einzelnen Raums der ausgewählten Gruppe. */
     fun setRoomVolume(roomUuid: String, volume: Int) {

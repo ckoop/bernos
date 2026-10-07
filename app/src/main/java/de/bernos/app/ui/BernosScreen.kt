@@ -32,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -51,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -79,6 +81,7 @@ interface BernosActions {
     fun next()
     fun previous()
     fun setVolume(volume: Int)
+    fun toggleMute()
     fun setRoomVolume(roomUuid: String, volume: Int)
     fun addRoom(roomUuid: String)
     fun removeRoom(roomUuid: String)
@@ -264,7 +267,9 @@ private fun NowPlayingView(
         }
         Spacer(Modifier.height(16.dp))
 
-        nowPlaying?.volume?.let { volume -> VolumeSlider(group.id, volume, actions::setVolume) }
+        nowPlaying?.volume?.let { volume ->
+            VolumeSlider(group.id, volume, actions::setVolume, muted = nowPlaying.muted == true, onToggleMute = actions::toggleMute)
+        }
         Spacer(Modifier.height(24.dp))
 
         FavoritesSection(favorites, actions::playFavorite)
@@ -344,7 +349,7 @@ private fun RoomsSection(group: ZoneGroup, allRooms: List<SonosDevice>, nowPlayi
                     }
                 }
                 nowPlaying?.memberVolumes?.get(member.uuid)?.let { volume ->
-                    VolumeSlider(member.uuid, volume) { actions.setRoomVolume(member.uuid, it) }
+                    VolumeSlider(member.uuid, volume, onVolumeChange = { actions.setRoomVolume(member.uuid, it) })
                 }
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
             }
@@ -425,14 +430,31 @@ private fun Progress(nowPlaying: NowPlaying?) {
 }
 
 @Composable
-private fun VolumeSlider(groupId: String, volume: Int, onVolumeChange: (Int) -> Unit) {
+private fun VolumeSlider(
+    groupId: String,
+    volume: Int,
+    onVolumeChange: (Int) -> Unit,
+    muted: Boolean = false,
+    /** Nur bei der Gruppenlautstärke: Symbol wird zum Knopf für Stummschalten. */
+    onToggleMute: (() -> Unit)? = null,
+) {
     // Während des Ziehens den lokalen Wert zeigen, damit Aktualisierungen vom Lautsprecher nicht dazwischenfunken.
     var dragging by remember(groupId) { mutableStateOf(false) }
     var dragValue by remember(groupId) { mutableFloatStateOf(volume.toFloat()) }
     val value = if (dragging) dragValue else volume.toFloat()
 
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(painterResource(R.drawable.ic_volume), contentDescription = stringResource(R.string.volume))
+        if (onToggleMute == null) {
+            Icon(painterResource(R.drawable.ic_volume), contentDescription = stringResource(R.string.volume))
+        } else {
+            IconButton(onClick = onToggleMute) {
+                Icon(
+                    painterResource(if (muted) R.drawable.ic_volume_off else R.drawable.ic_volume),
+                    contentDescription = stringResource(if (muted) R.string.unmute else R.string.mute),
+                    tint = if (muted) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                )
+            }
+        }
         Slider(
             value = value,
             onValueChange = {
@@ -444,7 +466,8 @@ private fun VolumeSlider(groupId: String, volume: Int, onVolumeChange: (Int) -> 
                 onVolumeChange(dragValue.toInt())
             },
             valueRange = 0f..100f,
-            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+            // Stumm bleibt die Lautstärke einstellbar, wirkt aber erst nach dem Aufheben.
+            modifier = Modifier.weight(1f).padding(horizontal = 12.dp).alpha(if (muted) 0.5f else 1f),
         )
         Text(value.toInt().toString(), style = MaterialTheme.typography.labelLarge)
     }

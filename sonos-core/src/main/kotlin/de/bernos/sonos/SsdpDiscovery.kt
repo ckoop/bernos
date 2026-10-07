@@ -20,6 +20,9 @@ class SsdpDiscovery(private val hooks: Hooks = Hooks.NONE) {
         fun beforeSearch()
         fun afterSearch()
 
+        /** Ergebnis jeder Suche, z. B. zum Protokollieren, welcher Suchweg funktioniert. */
+        fun onFound(hosts: Set<String>) = Unit
+
         companion object {
             val NONE = object : Hooks {
                 override fun beforeSearch() = Unit
@@ -58,7 +61,7 @@ class SsdpDiscovery(private val hooks: Hooks = Hooks.NONE) {
                         // weiter warten
                     }
                 }
-                hosts
+                hosts.also(hooks::onFound)
             }
         } finally {
             hooks.afterSearch()

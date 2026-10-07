@@ -15,7 +15,7 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy
 - **Räume gruppieren:** weitere Räume dazunehmen oder herausnehmen, Lautstärke pro Raum.
 - **Musik verschieben:** die laufende Musik mit einem Tipp in einen anderen Raum schicken.
 - Zeigt für den gewählten Raum Titel, Künstler, Album und **Albumcover** an, inkl. Fortschritt.
-- Abspielen/Pause, nächster/vorheriger Titel, Lautstärke der Gruppe.
+- Abspielen/Pause, nächster/vorheriger Titel, Lautstärke der Gruppe, **Stummschalten**.
 - **Sonos-Favoriten** ("Meine Sonos") mit Cover direkt abspielen: Radiosender sowie
   Playlists und Alben, z. B. von Spotify. Verknüpfungen (etwa Bereiche von Sonos Radio)
   gehen nur in der Sonos-App; Bernos weist darauf hin.

@@ -47,6 +47,14 @@ class SonosControllerTest {
 
     private fun uuid(room: String) = fake.speaker(room).uuid
 
+    private suspend fun awaitCondition(description: String, condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 5_000
+        while (!condition()) {
+            if (System.currentTimeMillis() > deadline) throw AssertionError("Nicht erreicht: $description")
+            delay(20)
+        }
+    }
+
     private companion object {
         val QUEUE_ACTIONS = setOf("RemoveAllTracksFromQueue", "AddURIToQueue", "SetAVTransportURI")
     }
@@ -111,6 +119,23 @@ class SonosControllerTest {
         controller.playFavorite(loaded.favorites.first { it.title == "Aktuell angesagt" }.id)
         awaitState("Hinweis für Verknüpfung") { it.error?.contains("Sonos-App") == true }
         Unit
+    }
+
+    @Test
+    fun `stummschalten und wieder einschalten`() = runBlocking {
+        controller.addHost(fake.speaker("Wohnzimmer").address)
+        val state = awaitState("drei Räume") { it.groups.size == 3 }
+        controller.selectGroup(state.groups.first { it.coordinator.roomName == "Wohnzimmer" }.id)
+        awaitState("Wiedergabe geladen") { it.nowPlaying?.muted == false }
+
+        // Die Oberfläche zeigt sofort an; der Lautsprecher bekommt den Befehl kurz danach.
+        controller.toggleMuted()
+        awaitState("stumm") { it.nowPlaying?.muted == true }
+        awaitCondition("Lautsprecher stumm") { fake.speaker("Wohnzimmer").muted }
+
+        controller.toggleMuted()
+        awaitState("wieder laut") { it.nowPlaying?.muted == false }
+        awaitCondition("Lautsprecher wieder laut") { !fake.speaker("Wohnzimmer").muted }
     }
 
     @Test

@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -49,6 +50,7 @@ class BernosScreenTest {
         override fun next() { calls += "next" }
         override fun previous() { calls += "previous" }
         override fun setVolume(volume: Int) { calls += "volume:$volume" }
+        override fun toggleMute() { calls += "toggleMute" }
         override fun setRoomVolume(roomUuid: String, volume: Int) { calls += "roomVolume:$roomUuid:$volume" }
         override fun addRoom(roomUuid: String) { calls += "add:$roomUuid" }
         override fun removeRoom(roomUuid: String) { calls += "remove:$roomUuid" }
@@ -148,5 +150,23 @@ class BernosScreenTest {
         compose.onNodeWithText("STAR FM Maximum Rock Berlin").performScrollTo().performClick()
 
         assertEquals(listOf("loadFavorites", "favorite:FV:2/3"), actions.calls)
+    }
+
+    @Test
+    fun stummschalten_knopf_zeigt_zustand_und_loest_aktion_aus() {
+        val laut = NowPlaying("G2", TransportState.PLAYING, null, null, null, 0, 40, muted = false)
+        val actions = show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = laut))
+
+        compose.onNodeWithContentDescription("Stummschalten").performScrollTo().performClick()
+
+        assertEquals(listOf("loadFavorites", "toggleMute"), actions.calls)
+    }
+
+    @Test
+    fun stumm_zeigt_knopf_zum_aufheben() {
+        val stumm = NowPlaying("G2", TransportState.PLAYING, null, null, null, 0, 40, muted = true)
+        show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = stumm))
+
+        compose.onNodeWithContentDescription("Stummschaltung aufheben").performScrollTo().assertIsDisplayed()
     }
 }

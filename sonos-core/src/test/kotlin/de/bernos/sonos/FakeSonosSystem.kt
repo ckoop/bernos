@@ -16,6 +16,7 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
         val server = MockWebServer()
         @Volatile var coordinatorUuid: String = uuid
         @Volatile var volume: Int = 20
+        @Volatile var muted: Boolean = false
         @Volatile var transport: String = "STOPPED"
         @Volatile var title: String? = null
         /** Radiosender wie bei TuneIn: Logo nur in den Metadaten der Quelle, nicht beim Titel. */
@@ -82,7 +83,10 @@ class FakeSonosSystem(roomNames: List<String>) : Closeable {
             "GetVolume" -> listOf("CurrentVolume" to speaker.volume.toString())
             "SetVolume" -> emptyList<Pair<String, String>>().also { speaker.volume = args.getValue("DesiredVolume").toInt() }
             "GetGroupVolume" -> listOf("CurrentVolume" to (members.sumOf { it.volume } / members.size).toString())
-            "GetGroupMute" -> listOf("CurrentMute" to "0")
+            "GetGroupMute" -> listOf("CurrentMute" to if (members.all { it.muted }) "1" else "0")
+            "SetGroupMute" -> emptyList<Pair<String, String>>().also {
+                members.forEach { m -> m.muted = args.getValue("DesiredMute") == "1" }
+            }
             "SnapshotGroupVolume" -> emptyList()
             "SetGroupVolume" -> emptyList<Pair<String, String>>().also {
                 members.forEach { m -> m.volume = args.getValue("DesiredVolume").toInt() }

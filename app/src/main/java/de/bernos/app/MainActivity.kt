@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
             override fun next() = controller.next()
             override fun previous() = controller.previous()
             override fun setVolume(volume: Int) = controller.setVolume(volume)
+            override fun toggleMute() = controller.toggleMuted()
             override fun setRoomVolume(roomUuid: String, volume: Int) = controller.setRoomVolume(roomUuid, volume)
             override fun addRoom(roomUuid: String) = controller.addRoomToGroup(roomUuid)
             override fun removeRoom(roomUuid: String) = controller.removeRoomFromGroup(roomUuid)

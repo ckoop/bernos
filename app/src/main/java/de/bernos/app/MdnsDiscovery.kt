@@ -5,6 +5,7 @@ import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 
 /**
  * Zweiter Suchweg neben SSDP: Sonos-Lautsprecher kündigen sich per mDNS als `_sonos._tcp` an.
@@ -19,11 +20,15 @@ class MdnsDiscovery(context: Context, private val onFound: (String) -> Unit) {
     fun search(durationMs: Long = 5_000) {
         if (listener != null) return
         val discoveryListener = object : NsdManager.DiscoveryListener {
-            override fun onServiceFound(service: NsdServiceInfo) = resolve(service)
+            override fun onServiceFound(service: NsdServiceInfo) {
+                Log.d(TAG, "Dienst gefunden: ${service.serviceName}")
+                resolve(service)
+            }
             override fun onServiceLost(service: NsdServiceInfo) = Unit
-            override fun onDiscoveryStarted(serviceType: String) = Unit
+            override fun onDiscoveryStarted(serviceType: String) = Log.d(TAG, "Suche gestartet").let { }
             override fun onDiscoveryStopped(serviceType: String) = Unit
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
+                Log.w(TAG, "Suche fehlgeschlagen, Fehler $errorCode")
                 listener = null
             }
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) = Unit
@@ -46,9 +51,12 @@ class MdnsDiscovery(context: Context, private val onFound: (String) -> Unit) {
             nsd.resolveService(
                 service,
                 object : NsdManager.ResolveListener {
-                    override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) = Unit
+                    override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                        Log.d(TAG, "Auflösen fehlgeschlagen: ${serviceInfo.serviceName}, Fehler $errorCode")
+                    }
                     override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
                         val host = serviceInfo.host?.hostAddress ?: return
+                        Log.d(TAG, "Aufgelöst: ${serviceInfo.serviceName} -> $host")
                         // IPv6-Adressen lassen sich nicht ohne Weiteres als URL verwenden.
                         if (':' in host) return
                         handler.post { onFound(host) }
@@ -60,5 +68,6 @@ class MdnsDiscovery(context: Context, private val onFound: (String) -> Unit) {
 
     private companion object {
         const val SERVICE_TYPE = "_sonos._tcp."
+        const val TAG = "BernosSuche"
     }
 }

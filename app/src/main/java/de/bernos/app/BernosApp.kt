@@ -3,6 +3,7 @@ package de.bernos.app
 import android.app.Application
 import android.content.Context
 import android.net.wifi.WifiManager
+import android.util.Log
 import de.bernos.app.wear.WearBridge
 import de.bernos.sonos.SonosController
 import de.bernos.sonos.SsdpDiscovery
@@ -22,7 +23,10 @@ class BernosApp : Application() {
         super.onCreate()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         controller = SonosController(scope, SsdpDiscovery(MulticastLockHooks(this)))
-        mdns = MdnsDiscovery(this) { host -> controller.addHost(host) }
+        mdns = MdnsDiscovery(this) { host ->
+            Log.i(DISCOVERY_TAG, "mDNS: Lautsprecher gefunden: $host")
+            controller.addHost(host)
+        }
         WearBridge(this, controller, scope).start()
     }
 
@@ -43,6 +47,15 @@ class BernosApp : Application() {
         override fun afterSearch() {
             if (lock.isHeld) lock.release()
         }
+
+        override fun onFound(hosts: Set<String>) {
+            Log.i(DISCOVERY_TAG, "SSDP: ${hosts.size} Lautsprecher gefunden: ${hosts.joinToString()}")
+        }
+    }
+
+    private companion object {
+        /** Protokoll der Suchwege: `adb logcat -s BernosSuche`. */
+        const val DISCOVERY_TAG = "BernosSuche"
     }
 }
 

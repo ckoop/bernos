@@ -73,7 +73,7 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
   `VolumeProviderCompat`: Benachrichtigung, Sperrbildschirm, Wear-OS-Mediensteuerung,
   Lautstärketasten. „Beenden“ stoppt auch das Polling (`stopTracking`).
 - `MdnsDiscovery` – `_sonos._tcp` über `NsdManager`; ein gefundener Lautsprecher genügt,
-  die Topologie liefert alle anderen.
+  die Topologie liefert alle anderen. Beide Suchwege protokollieren unter `BernosSuche`.
 - Cleartext-HTTP ist per `network_security_config.xml` erlaubt (Sonos spricht nur HTTP).
 - `wear/WearBridge` – veröffentlicht `WatchState` als DataItem `/bernos/state`, Cover als
   JPEG-Asset (320 px). `wear/WearCommandService` (WearableListenerService) führt Befehle von
@@ -123,6 +123,10 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
   auch mit `setLocalOnly(true)`; ein eigenes Ongoing-Activity-Symbol führte nur zu zwei Symbolen
   und einer Auswahl. Nutzer-Entscheidung: nur System-Player, Einschränkung dokumentiert.
   `REMOTE_MEDIA_ACTIVITY` ist in der Uhr-App angemeldet (wirkt ab Wear OS 7 / API 37).
+- Suchwege geprüft (07.10.2026, 0.4.4): SSDP und mDNS finden beim Nutzer beide alle 4
+  Lautsprecher (im allerersten Lauf nach der Installation nur 1 per SSDP, 0 per mDNS – die
+  doppelte Suche fängt das ab). Protokoll: `adb logcat -s BernosSuche`.
+- Stummschalten ✅ (0.4.4): Lautsprecher-Symbol neben der Gruppenlautstärke auf dem Handy.
 - Phase 4 ✅ Sonos-Favoriten (07.10.2026, Version 0.4.3): Browse `FV:2`, Sender direkt,
   Playlists/Alben über die Warteschlange – beides an echten Geräten bestätigt (TuneIn-Sender,
   Spotify-Playlist). Handy: Reihe "Favoriten"; Uhr: Stern-Knopf neben dem Raum (unten war auf
@@ -131,10 +135,7 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
 
 ## Todos
 
-1. **Gerätetest vervollständigen**: die einzelnen Suchwege (SSDP/mDNS/IP) prüfen. Installation: `adb install -r app/build/outputs/apk/debug/app-debug.apk`; auf
-   Xiaomi muss in den Entwickleroptionen „Über USB installieren“ aktiv sein und die Abfrage auf dem
-   Handy bestätigt werden. Gefundene Abweichungen in `FakeSonosSystem` nachbilden und als Test festhalten.
-2. **Optional – Spotify-Login**: Spotify-Inhalte (eigene Playlists, gespeicherte Alben, Suche)
+1. **Optional – Spotify-Login**: Spotify-Inhalte (eigene Playlists, gespeicherte Alben, Suche)
    in Bernos auswählbar machen, auf Handy und unter dem Stern auf der Uhr. Lokal über Sonos lässt
    sich Spotify nicht durchsuchen (SMAPI-Zugangsdaten bleiben in der Sonos-Cloud,
    `/status/accounts` ist auf aktueller Firmware leer). Weg: offizielle Spotify Web API mit
@@ -143,16 +144,15 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
    (wie SoCo-ShareLink), Spotify muss in der Sonos-App verknüpft sein. Nutzer muss eine App im
    Spotify-Entwicklerportal anlegen. Bis dahin: Spotify-Playlists als Sonos-Favoriten speichern
    (funktioniert über die Warteschlange). Einfachere Zwischenstufe wäre "Teilen → Bernos".
-3. **Optional – Sonos Ace (ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
+2. **Optional – Sonos Ace (ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
    Schnittstelle; die Ace hängt per Bluetooth am Handy, nicht im WLAN. Optionen: Content-Taste
    (geht heute), Sonos-App per Bedienungshilfe fernsteuern (fragil), Bluetooth-Protokoll
    analysieren (aufwendig). Vor jedem Aufwand mit dem Nutzer abstimmen.
-4. Kleinere offene Punkte:
+3. Kleinere offene Punkte:
    - Release-Signatur einrichten (Release nutzt derzeit den Debug-Schlüssel).
    - Ab Android 17 (API 37) prüfen, ob eine Berechtigung für das lokale Netz nötig ist.
    - Raumliste zeigt noch nicht, was in den einzelnen Räumen läuft.
    - Raumlautstärke wird nur per Polling aktualisiert (keine RenderingControl-Abos pro Mitglied).
-   - Stummschalten (`setMuted`) ist im Controller vorhanden, aber nicht in der Oberfläche.
    - Lint ist nicht Teil der CI; bei Gelegenheit `:app:lintDebug` aufnehmen und Befunde beheben.
    - Uhr: ungeprüft, ob sich Kachel/Komplikation bei geschlossener Uhr-App aktualisieren, wenn
      sich in der Sonos-App etwas ändert (StateListenerService). Die Handy-App fragt ohne
