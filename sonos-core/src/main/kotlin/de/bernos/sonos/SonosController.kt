@@ -93,6 +93,14 @@ class SonosController(
         if (added || _state.value.groups.isEmpty()) scope.launch { refreshTopology() }
     }
 
+    /** Lädt Raumaufteilung und Wiedergabe sofort neu, z. B. wenn die Uhr-App geöffnet wird. */
+    fun refresh() {
+        scope.launch {
+            refreshTopology()
+            refreshNowPlaying()
+        }
+    }
+
     fun selectGroup(groupId: String?) {
         _state.update { it.copy(selectedGroupId = groupId, nowPlaying = null, error = null) }
         startTracking()

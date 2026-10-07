@@ -11,9 +11,11 @@ App sind auf Deutsch. Bezeichner im Code bleiben Englisch.
 
 - **Direkt auf `main` committen und pushen**, keine Feature-Branches, keine Pull Requests
   (ausdrücklicher Wunsch des Nutzers).
-- Vor jedem Push lokal prüfen: `./gradlew :sonos-core:test :app:testDebugUnitTest :app:assembleDebug`.
+- Vor jedem Push lokal prüfen:
+  `./gradlew :sonos-core:test :wear-protocol:test :app:testDebugUnitTest :app:assembleDebug :wear:testDebugUnitTest :wear:assembleDebug`.
+  Lokal liegt kein JDK im PATH: `JAVA_HOME=~/Android/jdk-21` setzen (kompiliert für Java 17).
 - GitHub Actions (`.github/workflows/build.yml`) baut bei jedem Push, führt alle Tests aus und
-  stellt die APK als Artefakt `bernos-debug-apk` bereit. Ein roter Build ist sofort zu beheben.
+  stellt die APKs als Artefakte `bernos-debug-apk` (Handy) und `bernos-wear-debug-apk` (Uhr) bereit. Ein roter Build ist sofort zu beheben.
 - Am Ende einer Phase `README.md` und `docs/ROADMAP.md` aktualisieren.
 - Ehrlich berichten, was getestet ist: automatische Tests ≠ Test an echten Lautsprechern.
 
@@ -22,10 +24,13 @@ App sind auf Deutsch. Bezeichner im Code bleiben Englisch.
 | Modul | Inhalt |
 |---|---|
 | `sonos-core` | Reines Kotlin/JVM ohne Android-Abhängigkeiten. Gesamte Sonos-Logik, mit Unit-Tests. |
-| `app` | Android-App (Jetpack Compose, Material 3), `PlaybackService`, mDNS-Suche. |
+| `app` | Android-App (Jetpack Compose, Material 3), `PlaybackService`, mDNS-Suche, Brücke zur Uhr. |
+| `wear-protocol` | Reines Kotlin: `WatchState` und `WatchCommand` samt Binärformat für die Data Layer, mit Tests. |
+| `wear` | Wear-OS-App (Compose for Wear OS, Material 3), spricht nur mit dem Handy, nie direkt mit Sonos. |
 
-Paket `de.bernos.sonos` (Kern) bzw. `de.bernos.app` (App), applicationId `de.bernos.app`,
-minSdk 26, compile/targetSdk 36. Versionen in `gradle/libs.versions.toml`
+Paket `de.bernos.sonos` (Kern), `de.bernos.app` (App), `de.bernos.wearprotocol`, `de.bernos.wear`.
+applicationId `de.bernos.app` für Handy **und** Uhr (Pflicht für die Data Layer, ebenso gleiche
+Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `gradle/libs.versions.toml`
 (AGP 8.13, Kotlin 2.2.20, Gradle 8.14.3, JDK 17).
 
 ### sonos-core
@@ -56,12 +61,26 @@ minSdk 26, compile/targetSdk 36. Versionen in `gradle/libs.versions.toml`
 - `MdnsDiscovery` – `_sonos._tcp` über `NsdManager`; ein gefundener Lautsprecher genügt,
   die Topologie liefert alle anderen.
 - Cleartext-HTTP ist per `network_security_config.xml` erlaubt (Sonos spricht nur HTTP).
+- `wear/WearBridge` – veröffentlicht `WatchState` als DataItem `/bernos/state`, Cover als
+  JPEG-Asset (320 px). `wear/WearCommandService` (WearableListenerService) führt Befehle von
+  `/bernos/command` aus. Capability `bernos_phone` in `res/values/wear.xml`.
+
+### wear
+- `PhoneLink` – empfängt den Zustand per `DataClient`, sucht das Handy über die Capability und
+  schickt Befehle per `MessageClient`; Play/Pause, Lautstärke und Raumwahl werden sofort lokal
+  angezeigt. Lautstärke wird gedrosselt (letzter Wert gewinnt).
+- `MainActivity` – schickt alle 10 s `Hello`, solange sichtbar, damit das Handy auch im
+  Hintergrund aktualisiert (Android friert Hintergrund-Apps sonst ein).
+- `ui/BernosWear` – Raumliste und Wiedergabe (Cover als Hintergrund, Steuerung,
+  Lautstärke über Lünette/Drehkrone mit `LevelIndicator`). Tipp auf den Raumnamen → Raumliste.
 
 ## Tests
 - `sonos-core`: Parser-, SOAP-, SSDP-, Ereignis-Tests und Ende-zu-Ende-Tests des Controllers gegen
   `FakeSonosSystem` (simuliert mehrere Räume mit MockWebServer). Neue Sonos-Funktionen dort
   zuerst nachbilden und testen.
 - `app`: Compose-Oberflächentests mit Robolectric (`@Config(sdk = [35])`).
+- `wear`: Oberflächentests mit Robolectric auf einer runden Uhr (Qualifier `...-round-watch-...`,
+  `application = Application::class`, damit keine echte Data Layer startet).
 - Testnamen in Backticks **nur ASCII** (keine Umlaute) – sonst bricht der Kotlin-Compiler auf
   Systemen ohne UTF-8-Locale ab.
 - Keine Endlosschleifen (`while(true) { delay() }`) in Composables, die in Tests laufen – sonst wird

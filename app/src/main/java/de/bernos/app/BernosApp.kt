@@ -3,6 +3,7 @@ package de.bernos.app
 import android.app.Application
 import android.content.Context
 import android.net.wifi.WifiManager
+import de.bernos.app.wear.WearBridge
 import de.bernos.sonos.SonosController
 import de.bernos.sonos.SsdpDiscovery
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +23,7 @@ class BernosApp : Application() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         controller = SonosController(scope, SsdpDiscovery(MulticastLockHooks(this)))
         mdns = MdnsDiscovery(this) { host -> controller.addHost(host) }
+        WearBridge(this, controller, scope).start()
     }
 
     /** Sucht parallel per SSDP und mDNS; je nach Router funktioniert nur einer der beiden Wege. */

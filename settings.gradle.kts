@@ -18,3 +18,5 @@ rootProject.name = "Bernos"
 
 include(":sonos-core")
 include(":app")
+include(":wear-protocol")
+include(":wear")

@@ -7,12 +7,13 @@ plugins {
 }
 
 android {
-    namespace = "de.bernos.app"
+    namespace = "de.bernos.wear"
     compileSdk = 36
 
     defaultConfig {
+        // Dieselbe applicationId wie die Handy-App: Nur so verbindet die Data Layer beide Apps.
         applicationId = "de.bernos.app"
-        minSdk = 26
+        minSdk = 30
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
@@ -21,7 +22,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Bis eine eigene Signatur eingerichtet ist, wird auch Release mit dem Debug-Schlüssel signiert.
+            // Wie die Handy-App mit dem Debug-Schlüssel; beide müssen gleich signiert sein.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -51,25 +52,22 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":sonos-core"))
     implementation(project(":wear-protocol"))
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.play.services.wearable)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.media)
-    implementation(libs.play.services.wearable)
-    implementation(libs.kotlinx.coroutines.play.services)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
+    implementation(libs.wear.compose.material3)
+    implementation(libs.wear.compose.foundation)
+    implementation(libs.wear.compose.navigation)
     debugImplementation(libs.androidx.compose.ui.tooling)
-
-    implementation(libs.coil.compose)
-    implementation(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

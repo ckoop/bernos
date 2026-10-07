@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bernos</string>
+    <string name="rooms">Räume</string>
+    <string name="search_again">Neu suchen</string>
+    <string name="searching">Suche Lautsprecher …</string>
+    <string name="no_speakers">Keine Lautsprecher gefunden</string>
+    <string name="playing">Spielt</string>
+    <string name="connecting">Verbinde mit dem Handy …</string>
+    <string name="phone_unreachable">Handy nicht erreichbar</string>
+    <string name="phone_unreachable_hint">Bernos muss auf dem Handy installiert sein und das Handy in der Nähe.</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="nothing_playing">Nichts läuft</string>
+    <string name="play">Abspielen</string>
+    <string name="pause">Pause</string>
+    <string name="next">Nächster Titel</string>
+    <string name="previous">Vorheriger Titel</string>
+    <string name="choose_room">Raum wählen</string>
+    <string name="volume_percent">Lautstärke %1$d</string>
+</resources>

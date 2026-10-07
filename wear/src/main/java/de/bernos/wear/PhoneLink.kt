@@ -1,0 +1,145 @@
+package de.bernos.wear
+
+import android.content.Context
+import android.graphics.BitmapFactory
+import android.util.Log
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import com.google.android.gms.wearable.Asset
+import com.google.android.gms.wearable.CapabilityClient
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataItem
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.Wearable
+import de.bernos.wearprotocol.WatchCommand
+import de.bernos.wearprotocol.WatchState
+import de.bernos.wearprotocol.WearProtocol
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+
+/** Wie gut die Uhr die Handy-App erreicht. */
+enum class PhoneConnection { CONNECTING, CONNECTED, UNREACHABLE }
+
+/**
+ * Verbindung zur Handy-App über die Wearable Data Layer API: empfängt den Zustand samt
+ * Cover als DataItem und schickt Befehle als Nachricht an das Handy.
+ */
+class PhoneLink(context: Context, private val scope: CoroutineScope) {
+    private val dataClient = Wearable.getDataClient(context)
+    private val messageClient = Wearable.getMessageClient(context)
+    private val capabilityClient = Wearable.getCapabilityClient(context)
+
+    private val _state = MutableStateFlow<WatchState?>(null)
+    val state: StateFlow<WatchState?> = _state.asStateFlow()
+
+    private val _cover = MutableStateFlow<ImageBitmap?>(null)
+    val cover: StateFlow<ImageBitmap?> = _cover.asStateFlow()
+
+    private val _connection = MutableStateFlow(PhoneConnection.CONNECTING)
+    val connection: StateFlow<PhoneConnection> = _connection.asStateFlow()
+
+    private var coverUrl: String? = null
+
+    /** Gewünschte Lautstärke; beim schnellen Drehen der Lünette wird nur der letzte Wert geschickt. */
+    private val pendingVolume = MutableStateFlow<Int?>(null)
+
+    private val listener = DataClient.OnDataChangedListener { events ->
+        // Der Puffer wird nach dem Aufruf freigegeben, daher die Daten sofort herauslösen.
+        events.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == WearProtocol.STATE_PATH }
+            .map { it.dataItem.freeze() }
+            .forEach { apply(it) }
+    }
+
+    fun start() {
+        dataClient.addListener(listener)
+        scope.launch {
+            // Zuletzt bekannten Zustand laden, falls sich seit dem letzten Start nichts geändert hat.
+            runCatching {
+                val items = dataClient.dataItems.await()
+                try {
+                    items.firstOrNull { it.uri.path == WearProtocol.STATE_PATH }?.freeze()
+                } finally {
+                    items.release()
+                }
+            }.getOrNull()?.let { apply(it) }
+        }
+        scope.launch {
+            pendingVolume.filterNotNull().collect { volume ->
+                transmit(WatchCommand.SetVolume(volume))
+                delay(VOLUME_THROTTLE_MS)
+            }
+        }
+    }
+
+    fun send(command: WatchCommand) {
+        // Sofort anzeigen, das Handy bestätigt kurz darauf.
+        when (command) {
+            WatchCommand.PlayPause -> _state.update { it?.copy(isPlaying = !it.isPlaying) }
+            is WatchCommand.SetVolume -> {
+                _state.update { it?.copy(volume = command.volume) }
+                pendingVolume.value = command.volume
+                return
+            }
+            is WatchCommand.SelectGroup -> _state.update {
+                it?.copy(selectedGroupId = command.groupId, title = null, artist = null, album = null, coverUrl = null, volume = null)
+            }
+            else -> Unit
+        }
+        scope.launch { transmit(command) }
+    }
+
+    private suspend fun transmit(command: WatchCommand) {
+        try {
+            val nodes = capabilityClient
+                .getCapability(WearProtocol.PHONE_CAPABILITY, CapabilityClient.FILTER_REACHABLE)
+                .await()
+                .nodes
+            val node = nodes.firstOrNull { it.isNearby } ?: nodes.firstOrNull()
+            if (node == null) {
+                _connection.value = PhoneConnection.UNREACHABLE
+                return
+            }
+            messageClient.sendMessage(node.id, WearProtocol.COMMAND_PATH, command.encode()).await()
+            _connection.value = PhoneConnection.CONNECTED
+        } catch (e: Exception) {
+            Log.w(TAG, "Befehl nicht gesendet: ${e.message}")
+            _connection.value = PhoneConnection.UNREACHABLE
+        }
+    }
+
+    private fun apply(item: DataItem) {
+        val dataMap = DataMapItem.fromDataItem(item).dataMap
+        val state = dataMap.getByteArray(WearProtocol.STATE_KEY)?.let { WatchState.decode(it) } ?: return
+        _state.value = state
+        _connection.value = PhoneConnection.CONNECTED
+        if (state.coverUrl != coverUrl) {
+            coverUrl = state.coverUrl
+            val asset = dataMap.getAsset(WearProtocol.COVER_ASSET)
+            if (asset == null || state.coverUrl == null) {
+                _cover.value = null
+            } else {
+                scope.launch { loadCover(asset, state.coverUrl) }
+            }
+        }
+    }
+
+    private suspend fun loadCover(asset: Asset, url: String?) {
+        val bitmap = runCatching {
+            dataClient.getFdForAsset(asset).await().inputStream.use { BitmapFactory.decodeStream(it) }
+        }.getOrNull()
+        if (url == coverUrl) _cover.value = bitmap?.asImageBitmap()
+    }
+
+    private companion object {
+        const val TAG = "PhoneLink"
+        const val VOLUME_THROTTLE_MS = 120L
+    }
+}
