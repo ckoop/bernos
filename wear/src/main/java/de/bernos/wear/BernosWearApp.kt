@@ -5,6 +5,9 @@ import android.content.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 class BernosWearApp : Application() {
 
@@ -14,8 +17,16 @@ class BernosWearApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        phone = PhoneLink(this, CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        phone = PhoneLink(this, scope)
         phone.start()
+        // Kachel und Komplikation nur bei Änderungen neu zeichnen, die sie auch zeigen.
+        scope.launch {
+            phone.state
+                .map { NowPlayingSummary.from(it) }
+                .distinctUntilChanged()
+                .collect { WearSurfaces.requestUpdate(this@BernosWearApp) }
+        }
     }
 }
 

@@ -56,28 +56,36 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
         // Der Puffer wird nach dem Aufruf freigegeben, daher die Daten sofort herauslösen.
         events.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == WearProtocol.STATE_PATH }
             .map { it.dataItem.freeze() }
-            .forEach { apply(it) }
+            .forEach { onDataItem(it) }
     }
 
     fun start() {
         dataClient.addListener(listener)
-        scope.launch {
-            // Zuletzt bekannten Zustand laden, falls sich seit dem letzten Start nichts geändert hat.
-            runCatching {
-                val items = dataClient.dataItems.await()
-                try {
-                    items.firstOrNull { it.uri.path == WearProtocol.STATE_PATH }?.freeze()
-                } finally {
-                    items.release()
-                }
-            }.getOrNull()?.let { apply(it) }
-        }
+        scope.launch { loadStored() }
         scope.launch {
             pendingVolume.filterNotNull().collect { volume ->
                 transmit(WatchCommand.SetVolume(volume))
                 delay(VOLUME_THROTTLE_MS)
             }
         }
+    }
+
+    /** Aktueller Zustand; lädt beim Kaltstart (z. B. für Kachel oder Komplikation) den gespeicherten. */
+    suspend fun awaitState(): WatchState? {
+        if (_state.value == null) loadStored()
+        return _state.value
+    }
+
+    /** Zuletzt bekannten Zustand laden, falls sich seit dem letzten Start nichts geändert hat. */
+    private suspend fun loadStored() {
+        runCatching {
+            val items = dataClient.dataItems.await()
+            try {
+                items.firstOrNull { it.uri.path == WearProtocol.STATE_PATH }?.freeze()
+            } finally {
+                items.release()
+            }
+        }.getOrNull()?.let { onDataItem(it) }
     }
 
     fun send(command: WatchCommand) {
@@ -117,7 +125,7 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
         }
     }
 
-    private fun apply(item: DataItem) {
+    fun onDataItem(item: DataItem) {
         val dataMap = DataMapItem.fromDataItem(item).dataMap
         val state = dataMap.getByteArray(WearProtocol.STATE_KEY)?.let { WatchState.decode(it) } ?: return
         Log.d(TAG, "Zustand empfangen: Raum=${state.selectedGroupId}, Titel=${state.title}, ${item.uri}")

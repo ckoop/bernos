@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="192"
+    android:viewportHeight="192">
+    <!-- Vorschau der Kachel in der Kachel-Auswahl: Titelzeilen und drei Knöpfe. -->
+    <path android:fillColor="#FF000000" android:pathData="M96,0a96,96 0,1 1,0 192a96,96 0,1 1,0 -192z" />
+    <path android:fillColor="#FFB0B0B0" android:pathData="M76,40h40v6h-40z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M52,60h88v10h-88z" />
+    <path android:fillColor="#FFB0B0B0" android:pathData="M66,78h60v6h-60z" />
+    <path android:fillColor="#FF303030" android:pathData="M54,118m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0" />
+    <path android:fillColor="#FFD0BCFF" android:pathData="M96,118m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
+    <path android:fillColor="#FF303030" android:pathData="M138,118m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0" />
+    <path android:fillColor="#FF000000" android:pathData="M90,108v20l16,-10z" />
+</vector>
