@@ -21,6 +21,8 @@ Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wea
 - Handy bleibt die Zentrale; Uhr spricht über die Wearable Data Layer API
   (`MessageClient` für Befehle, `DataClient` für Status und Cover).
 - Raumauswahl, Cover, Lautstärke über Drehkrone/Lünette, Kachel (Tile) und Komplikation.
+- Teil 1 ✅ (an Galaxy Watch7 getestet): Raumliste, Wiedergabe mit Cover, Steuerung, Lautstärke
+  über die Lünette, Raum wechseln und Musik verschieben. Teil 2 offen: Tile und Komplikation.
 
 ## Phase 4 – Sonos Ace (offen)
 Sonos bietet für „TV Audio Swap“ keine öffentliche Schnittstelle; die Ace ist kein

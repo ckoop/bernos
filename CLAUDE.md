@@ -95,15 +95,20 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
   Benachrichtigung, Uhr-Mediensteuerung, Lautstärketasten sowie Dazu/Entfernen/Hierher
   funktionieren laut Nutzer. Radio (TuneIn) zeigt Titel und Senderlogo. Nicht gezielt geprüft:
   welcher Suchweg (SSDP/mDNS/IP) gegriffen hat.
+- Phase 3, Teil 1 ✅ Uhr-App (07.10.2026 an Galaxy Watch7 bestätigt): Raumliste, Wiedergabe mit
+  Cover, Play/Pause/Weiter/Zurück, Lautstärke über die Lünette, Raum wechseln, Musik verschieben.
+  Lehren: Ziele von `SwipeDismissableNavHost` dürfen keinen Zustand einfangen (über
+  `rememberUpdatedState` lesen); mehrfache `adb shell am start` erzeugten zwei Instanzen →
+  `singleTask`. Galaxy Watch verliert WLAN-Debugging oft beim Ausschalten des Bildschirms.
 
 ## Todos
 
 1. **Gerätetest vervollständigen**: die einzelnen Suchwege (SSDP/mDNS/IP) prüfen. Installation: `adb install -r app/build/outputs/apk/debug/app-debug.apk`; auf
    Xiaomi muss in den Entwickleroptionen „Über USB installieren“ aktiv sein und die Abfrage auf dem
    Handy bestätigt werden. Gefundene Abweichungen in `FakeSonosSystem` nachbilden und als Test festhalten.
-2. **Phase 3 – Wear-OS-App**: neues Modul `wear` (Compose for Wear OS). Handy bleibt die Zentrale;
-   Kommunikation über die Wearable Data Layer API (`MessageClient` für Befehle, `DataClient` für
-   Status/Cover). Raumauswahl, Cover, Lautstärke über Drehkrone/Lünette, Tile, Komplikation.
+2. **Phase 3, Teil 2 – Tile und Komplikation** für die Uhr (Titel + Play/Pause bzw. Raum/Titel).
+   Danach README und ROADMAP für Phase 3 abschließen. Offen außerdem: CI-Commit für die Uhr-App
+   pushen, sobald das GitHub-Token den `workflow`-Scope hat (`gh auth refresh -s workflow`).
 3. **Phase 4 – Sonos Ace (offen, ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
    Schnittstelle; die Ace hängt per Bluetooth am Handy, nicht im WLAN. Optionen: Content-Taste
    (geht heute), Sonos-App per Bedienungshilfe fernsteuern (fragil), Bluetooth-Protokoll
