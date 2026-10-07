@@ -39,9 +39,9 @@ import androidx.media.app.NotificationCompat as MediaNotificationCompat
 /**
  * Meldet die Sonos-Wiedergabe beim System als Mediensitzung an.
  *
- * Dadurch erscheinen Titel, Cover und Steuerknöpfe in der Benachrichtigung, auf dem
- * Sperrbildschirm und in der Mediensteuerung der Wear-OS-Uhr. Die Lautstärketasten
- * des Handys regeln die Sonos-Gruppe.
+ * Dadurch erscheinen Titel, Cover und Steuerknöpfe in der Benachrichtigung und auf dem
+ * Sperrbildschirm. Die Lautstärketasten des Handys regeln die Sonos-Gruppe. Auf der Uhr
+ * übernimmt die Bernos-Uhr-App (die Benachrichtigung ist nur lokal).
  */
 class PlaybackService : Service() {
 
@@ -206,6 +206,9 @@ class PlaybackService : Service() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
             .setSilent(true)
+            // Nicht an die Uhr weiterreichen: Dort zeigt die Bernos-Uhr-App ihr eigenes Symbol,
+            // statt dass die System-Mediensteuerung von Wear OS übernimmt.
+            .setLocalOnly(true)
             .setOngoing(playing)
             .addAction(R.drawable.ic_skip_previous, getString(R.string.previous), serviceIntent(ACTION_PREVIOUS))
             .addAction(

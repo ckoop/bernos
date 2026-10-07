@@ -26,4 +26,5 @@
     <string name="complication_label">Bernos – laufender Titel</string>
     <string name="favorites">Favoriten</string>
     <string name="no_favorites">Keine abspielbaren Favoriten. Favoriten legst du in der Sonos-App an.</string>
+    <string name="playing_channel">Wiedergabe</string>
 </resources>

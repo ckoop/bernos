@@ -3,6 +3,8 @@
 
     <uses-feature android:name="android.hardware.type.watch" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".BernosWearApp"
         android:allowBackup="true"
@@ -24,6 +26,11 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Ab Wear OS 7: Bernos statt der System-Mediensteuerung für die Wiedergabe vom Handy. -->
+            <intent-filter>
+                <action android:name="com.google.wear.services.media.action.REMOTE_MEDIA_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
