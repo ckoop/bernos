@@ -150,18 +150,7 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
    Schnittstelle; die Ace hängt per Bluetooth am Handy, nicht im WLAN. Optionen: Content-Taste
    (geht heute), Sonos-App per Bedienungshilfe fernsteuern (fragil), Bluetooth-Protokoll
    analysieren (aufwendig). Vor jedem Aufwand mit dem Nutzer abstimmen.
-3. **Möglicher Release (F-Droid oder Play Store)** – vorher mit dem Nutzer klären, welcher Weg:
-   - `README.md` für Endnutzer umschreiben: Was Bernos kann, Screenshots von Handy, Uhr, Kachel,
-     Installation aus dem Store statt per adb/APK; Entwickler-Teil (Bauen, Module) nach hinten
-     oder in eine eigene Datei. Hinweis "keine Verbindung zu Sonos, Inc." deutlich lassen.
-   - Lizenz festlegen und `LICENSE` anlegen (fehlt bisher; für F-Droid Pflicht, freie Lizenz).
-   - F-Droid: verlangt ausschließlich freie Abhängigkeiten. `play-services-wearable` (Data Layer
-     zwischen Handy und Uhr) ist proprietär → für F-Droid bräuchte es eine Variante ohne Uhr-Anbindung
-     oder einen anderen Übertragungsweg. Store-Texte/Bilder im Fastlane-Format (`fastlane/metadata`).
-   - Play Store: Datenschutzerklärung (auch wenn nichts erhoben wird), Store-Eintrag mit Texten und
-     Grafiken, App-Bundle (`bundleRelease`), Handy- und Uhr-App als gemeinsamer Eintrag.
-   - Release-Signatur einrichten (siehe unten), App-Name/Icon markenrechtlich prüfen.
-4. Kleinere offene Punkte:
+3. Kleinere offene Punkte:
    - Release-Signatur einrichten (Release nutzt derzeit den Debug-Schlüssel).
    - Ab Android 17 (API 37) prüfen, ob eine Berechtigung für das lokale Netz nötig ist.
    - Raumliste zeigt noch nicht, was in den einzelnen Räumen läuft.
