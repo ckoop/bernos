@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +48,7 @@ import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.FilledIconButton
+import androidx.wear.compose.material3.FilledTonalIconButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconButton
 import androidx.wear.compose.material3.IconButtonDefaults
@@ -325,14 +327,29 @@ private fun PlayerScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // Deutlich als Knopf erkennbar: Hier geht es zur Raumliste.
-                CompactButton(
-                    onClick = onOpenRooms,
-                    modifier = Modifier.testTag("raum"),
-                    colors = ButtonDefaults.filledTonalButtonColors(),
-                    icon = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = stringResource(R.string.choose_room)) },
-                    label = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                )
+                // Oben nebeneinander: Raum (zur Raumliste) und Favoriten. Unten wäre auf dem runden
+                // Bildschirm kein Platz mehr, dort wurde der Favoriten-Knopf abgeschnitten.
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    CompactButton(
+                        onClick = onOpenRooms,
+                        modifier = Modifier.widthIn(max = 132.dp).testTag("raum"),
+                        colors = ButtonDefaults.filledTonalButtonColors(),
+                        icon = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = stringResource(R.string.choose_room)) },
+                        label = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    )
+                    if (state.favorites.isNotEmpty()) {
+                        FilledTonalIconButton(
+                            onClick = onOpenFavorites,
+                            modifier = Modifier.size(IconButtonDefaults.ExtraSmallButtonSize).testTag("favoriten"),
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_star),
+                                contentDescription = stringResource(R.string.favorites),
+                                modifier = Modifier.size(IconButtonDefaults.SmallIconSize),
+                            )
+                        }
+                    }
+                }
                 Text(
                     state.title ?: state.album ?: stringResource(R.string.nothing_playing),
                     style = MaterialTheme.typography.titleMedium,
@@ -375,16 +392,7 @@ private fun PlayerScreen(
                         maxLines = 2,
                     )
                 }
-                if (state.favorites.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
-                    CompactButton(
-                        onClick = onOpenFavorites,
-                        modifier = Modifier.testTag("favoriten"),
-                        colors = ButtonDefaults.filledTonalButtonColors(),
-                        icon = { Icon(painterResource(R.drawable.ic_star), contentDescription = null) },
-                        label = { Text(stringResource(R.string.favorites)) },
-                    )
-                }
+
             }
         }
     }

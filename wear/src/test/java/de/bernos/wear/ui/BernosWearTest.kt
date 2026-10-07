@@ -128,17 +128,21 @@ class BernosWearTest {
         val state = WatchState(
             groups = groups,
             selectedGroupId = "G1",
-            title = "Song",
+            title = "Ein sehr langer Liedtitel, der zwei Zeilen braucht",
+            artist = "Dexter And The Moonrocks",
             volume = 10,
             favorites = listOf(WatchFavorite("FV:2/3", "STAR FM Maximum Rock Berlin")),
         )
         compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, actions) }
 
-        compose.onNodeWithTag("favoriten").performClick()
+        // Auf der echten Uhr war der Knopf unten aus dem Bildschirm gerutscht; daher auf Sichtbarkeit prüfen,
+        // und zwar mit langem Titel und Künstler, wie es im Alltag vorkommt.
+        compose.onNodeWithContentDescription("Nächster Titel").assertIsDisplayed()
+        compose.onNodeWithTag("favoriten").assertIsDisplayed().performClick()
         compose.onNodeWithText("STAR FM Maximum Rock Berlin").performClick()
 
         assertEquals(listOf("favorite:FV:2/3"), actions.calls)
-        compose.onNodeWithText("Song").assertIsDisplayed()
+        compose.onNodeWithText("Dexter And The Moonrocks").assertIsDisplayed()
     }
 
     @Test
