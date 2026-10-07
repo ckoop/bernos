@@ -19,11 +19,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Tests (Sonos-Kern)
-        run: ./gradlew :sonos-core:test
+      - name: Tests (Sonos-Kern und Uhr-Protokoll)
+        run: ./gradlew :sonos-core:test :wear-protocol:test
 
       - name: Android-App bauen und Oberflaeche testen
         run: ./gradlew :app:assembleDebug :app:testDebugUnitTest
+
+      - name: Wear-OS-App bauen und Oberflaeche testen
+        run: ./gradlew :wear:assembleDebug :wear:testDebugUnitTest
 
       - name: Testberichte bereitstellen
         if: failure()
@@ -37,4 +40,11 @@ jobs:
         with:
           name: bernos-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Uhr-APK bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: bernos-wear-debug-apk
+          path: wear/build/outputs/apk/debug/*.apk
           if-no-files-found: error
