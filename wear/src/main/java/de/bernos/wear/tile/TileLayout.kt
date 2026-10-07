@@ -2,12 +2,14 @@ package de.bernos.wear.tile
 
 import android.content.Context
 import androidx.wear.protolayout.ActionBuilders
+import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.material.Button
 import androidx.wear.protolayout.material.ButtonDefaults
+import androidx.wear.protolayout.material.Colors
 import androidx.wear.protolayout.material.CompactChip
 import androidx.wear.protolayout.material.Text
 import androidx.wear.protolayout.material.Typography
@@ -28,6 +30,12 @@ object TileLayout {
     const val ICON_PAUSE = "pause"
     const val ICON_NEXT = "next"
     const val ICON_PREVIOUS = "previous"
+
+    // Ohne ausdrückliche Farbe zeichnet protolayout-material Text in ON_PRIMARY (dunkelgrau),
+    // gedacht für helle Knöpfe – auf dem schwarzen Kachelhintergrund kaum lesbar.
+    private val TITLE_COLOR = argb(Colors.ON_SURFACE)
+    private val SUBTITLE_COLOR = argb(0xFFBDC1C6.toInt())
+    private val ROOM_COLOR = argb(Colors.PRIMARY)
 
     fun build(context: Context, device: DeviceParameters, summary: NowPlayingSummary): LayoutElementBuilders.LayoutElement {
         val openApp = ModifiersBuilders.Clickable.Builder()
@@ -51,6 +59,7 @@ object TileLayout {
                 .setContent(
                     Text.Builder(context, context.getString(message))
                         .setTypography(Typography.TYPOGRAPHY_BODY1)
+                        .setColor(TITLE_COLOR)
                         .setMaxLines(3)
                         .setMultilineAlignment(LayoutElementBuilders.TEXT_ALIGN_CENTER)
                         .build(),
@@ -64,6 +73,7 @@ object TileLayout {
             .addContent(
                 Text.Builder(context, summary.title ?: context.getString(R.string.nothing_playing))
                     .setTypography(Typography.TYPOGRAPHY_TITLE3)
+                    .setColor(TITLE_COLOR)
                     .setMaxLines(2)
                     .setMultilineAlignment(LayoutElementBuilders.TEXT_ALIGN_CENTER)
                     .setModifiers(ModifiersBuilders.Modifiers.Builder().setClickable(openApp).build())
@@ -74,6 +84,7 @@ object TileLayout {
                     addContent(
                         Text.Builder(context, it)
                             .setTypography(Typography.TYPOGRAPHY_CAPTION2)
+                            .setColor(SUBTITLE_COLOR)
                             .setMaxLines(1)
                             .build(),
                     )
@@ -99,6 +110,7 @@ object TileLayout {
             .setPrimaryLabelTextContent(
                 Text.Builder(context, room)
                     .setTypography(Typography.TYPOGRAPHY_CAPTION1)
+                    .setColor(ROOM_COLOR)
                     .setMaxLines(1)
                     .build(),
             )
