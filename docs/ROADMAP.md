@@ -51,6 +51,13 @@ WLAN-Lautsprecher, sondern per Bluetooth mit dem Handy verbunden. Mögliche Wege
 2. Sonos-App per Bedienungshilfe/Tasker fernsteuern lassen – fragil.
 3. Bluetooth-Protokoll der Ace analysieren – aufwendig, kann jederzeit brechen.
 
+## Später – Veröffentlichung (F-Droid oder Play Store)
+- README für Endnutzer umschreiben (Funktionen, Screenshots, Installation aus dem Store).
+- Lizenz festlegen, Release-Signatur, Store-Texte und Grafiken.
+- F-Droid erlaubt keine proprietären Bibliotheken; die Uhr-Anbindung nutzt Google Play Services
+  (Wearable Data Layer) und bräuchte dort eine Alternative.
+- Play Store: Datenschutzerklärung, App-Bundle, Handy- und Uhr-App in einem Eintrag.
+
 ## Hinweise
 - Ab Android 17 (API 37) kann für den Zugriff aufs lokale Netz eine eigene Berechtigung
   nötig werden; beim Anheben von `targetSdk` prüfen.
