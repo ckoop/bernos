@@ -34,6 +34,7 @@ minSdk 26, compile/targetSdk 36. Versionen in `gradle/libs.versions.toml`
   ZoneGroupTopology): Play/Pause/Next/Previous, Position/Metadaten, Gruppen- und Raumlautstärke,
   `joinGroup` (`x-rincon:`), `leaveGroup`, `delegateCoordination`, `zoneGroups`.
 - `Parsers` – DIDL-Lite (Titel, Künstler, Album, Cover; Radio über `streamContent`), Dauer,
+  Quelle aus `CurrentURIMetaData` (Sendername und -logo; TuneIn liefert das Logo nur dort),
   `ZoneGroupState` (unsichtbare Mitglieder und Bridges werden ausgeblendet).
 - `SsdpDiscovery` – M-SEARCH nach `ZonePlayer:1`; auf Android über `Hooks` mit MulticastLock.
 - `GenaEvents` – eigener kleiner HTTP-Server für NOTIFY + SUBSCRIBE/Renew/UNSUBSCRIBE.
@@ -73,13 +74,12 @@ minSdk 26, compile/targetSdk 36. Versionen in `gradle/libs.versions.toml`
 - ✅ Erster Test an echten Geräten (07.10.2026, Xiaomi/POCO mit Android 16 und Galaxy Watch):
   Raumsuche, Titel/Cover, Steuerung, Live-Updates bei Änderungen aus der Sonos-App,
   Benachrichtigung, Uhr-Mediensteuerung, Lautstärketasten sowie Dazu/Entfernen/Hierher
-  funktionieren laut Nutzer. Nicht gezielt geprüft: welcher Suchweg (SSDP/mDNS/IP) gegriffen hat,
-  Radiosender.
+  funktionieren laut Nutzer. Radio (TuneIn) zeigt Titel und Senderlogo. Nicht gezielt geprüft:
+  welcher Suchweg (SSDP/mDNS/IP) gegriffen hat.
 
 ## Todos
 
-1. **Gerätetest vervollständigen**: Radiosender (Titel/Cover über `streamContent`) und die einzelnen
-   Suchwege prüfen. Installation: `adb install -r app/build/outputs/apk/debug/app-debug.apk`; auf
+1. **Gerätetest vervollständigen**: die einzelnen Suchwege (SSDP/mDNS/IP) prüfen. Installation: `adb install -r app/build/outputs/apk/debug/app-debug.apk`; auf
    Xiaomi muss in den Entwickleroptionen „Über USB installieren“ aktiv sein und die Abfrage auf dem
    Handy bestätigt werden. Gefundene Abweichungen in `FakeSonosSystem` nachbilden und als Test festhalten.
 2. **Phase 3 – Wear-OS-App**: neues Modul `wear` (Compose for Wear OS). Handy bleibt die Zentrale;

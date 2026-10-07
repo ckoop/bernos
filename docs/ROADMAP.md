@@ -14,7 +14,7 @@ Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wea
 - Tests: simuliertes Sonos-System mit drei Räumen für den Controller, Oberflächentests mit
   Robolectric.
 - Erster Test an echten Lautsprechern bestanden (Handy mit Android 16, Galaxy Watch).
-  Noch offen: Radiosender und die einzelnen Suchwege gezielt prüfen.
+  Radio (TuneIn) zeigt Titel und Senderlogo. Noch offen: die einzelnen Suchwege gezielt prüfen.
 
 ## Phase 3 – Eigene Wear-OS-App
 - Modul `wear` mit Compose for Wear OS.
