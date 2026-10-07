@@ -118,6 +118,11 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
   `protolayout-material`-Text ist ohne `setColor` dunkelgrau (ON_PRIMARY); `lastClickableId`
   kommt nur in der Anfrage direkt nach dem Tipp, spätere Aktualisierungen haben sie leer.
   **Phase 3 abgeschlossen** (Version 0.3.3). 1.0.0 erst, wenn es sich im Alltag bewährt hat.
+- Medien-Symbol auf dem Zifferblatt (0.4.2 probiert, 0.4.3 zurückgenommen): Es gehört zur
+  System-Mediensteuerung und öffnet deren Player. Wear OS übernimmt die Mediensitzung des Handys
+  auch mit `setLocalOnly(true)`; ein eigenes Ongoing-Activity-Symbol führte nur zu zwei Symbolen
+  und einer Auswahl. Nutzer-Entscheidung: nur System-Player, Einschränkung dokumentiert.
+  `REMOTE_MEDIA_ACTIVITY` ist in der Uhr-App angemeldet (wirkt ab Wear OS 7 / API 37).
 
 ## Todos
 

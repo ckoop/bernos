@@ -34,6 +34,14 @@ Nähe sein; es spricht mit Sonos, die Uhr nur mit dem Handy):
 - **Kachel** neben dem Zifferblatt: Bernos, Raum, Titel mit Cover im Hintergrund und
   Steuerknöpfe – ohne die App zu öffnen.
 - **Komplikation** fürs Zifferblatt (kurzer oder langer Text) mit dem laufenden Titel.
+- **Favoriten** über den Stern neben dem Raum.
+
+**Einschränkung:** Das Medien-Symbol unten auf dem Zifferblatt gehört zur System-Mediensteuerung
+von Wear OS und öffnet deren Player, nicht Bernos. Wear OS übernimmt die Wiedergabe des Handys
+automatisch; bis Wear OS 6 lässt sich das für eine einzelne App nicht abschalten (Samsung bietet
+nur den globalen Schalter "Medienelemente anzeigen", der das Symbol nicht entfernt). Bernos
+öffnest du über die App-Liste, die Kachel oder die Komplikation. Ab Wear OS 7 kann das System
+Bernos statt des Players öffnen; die Uhr-App ist dafür bereits angemeldet.
 
 Die Ace-Kopfhörer lassen sich nicht über die App umschalten: Sonos bietet für
 „TV Audio Swap“ keine Schnittstelle. Siehe [docs/ROADMAP.md](docs/ROADMAP.md).

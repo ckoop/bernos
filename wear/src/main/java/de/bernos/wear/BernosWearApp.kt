@@ -25,10 +25,7 @@ class BernosWearApp : Application() {
         scope.launch {
             combine(phone.state.map { NowPlayingSummary.from(it) }, phone.tileCover.map { it?.version }) { summary, cover -> summary to cover }
                 .distinctUntilChanged()
-                .collect { (summary, _) ->
-                    WearSurfaces.requestUpdate(this@BernosWearApp)
-                    NowPlayingIndicator.update(this@BernosWearApp, summary)
-                }
+                .collect { WearSurfaces.requestUpdate(this@BernosWearApp) }
         }
     }
 }

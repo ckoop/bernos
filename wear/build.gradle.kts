@@ -74,7 +74,6 @@ dependencies {
     implementation(libs.wear.protolayout.material)
     implementation(libs.wear.complications.data.source.ktx)
     implementation(libs.androidx.concurrent.futures.ktx)
-    implementation(libs.wear.ongoing)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
