@@ -22,7 +22,7 @@ object WearProtocol {
     const val PHONE_CAPABILITY = "bernos_phone"
 
     /** Format-Version; bei inkompatiblen Änderungen erhöhen. */
-    const val VERSION = 1
+    const val VERSION = 2
 }
 
 /** Ein Raum bzw. eine Gruppe, wie die Uhr sie in der Liste zeigt. */
@@ -30,6 +30,12 @@ data class WatchGroup(
     val id: String,
     val name: String,
     val isPlaying: Boolean = false,
+)
+
+/** Ein einzelner Raum, in den sich die laufende Musik verschieben lässt. */
+data class WatchRoom(
+    val uuid: String,
+    val name: String,
 )
 
 /** Alles, was die Uhr anzeigt. Bewusst klein gehalten, die Position wird nicht übertragen. */
@@ -45,6 +51,8 @@ data class WatchState(
     val volume: Int? = null,
     val discovering: Boolean = false,
     val error: String? = null,
+    /** Räume, in die sich die Musik der gewählten Gruppe verschieben lässt (ohne den steuernden Raum). */
+    val moveTargets: List<WatchRoom> = emptyList(),
 ) {
     val selectedGroup: WatchGroup? get() = groups.firstOrNull { it.id == selectedGroupId }
 
@@ -65,6 +73,11 @@ data class WatchState(
         out.writeInt(volume ?: -1)
         out.writeBoolean(discovering)
         out.writeNullable(error)
+        out.writeInt(moveTargets.size)
+        moveTargets.forEach {
+            out.writeUTF(it.uuid)
+            out.writeUTF(it.name)
+        }
     }
 
     companion object {
@@ -85,6 +98,7 @@ data class WatchState(
                 volume = input.readInt().takeIf { it >= 0 },
                 discovering = input.readBoolean(),
                 error = input.readNullable(),
+                moveTargets = List(input.readInt()) { WatchRoom(uuid = input.readUTF(), name = input.readUTF()) },
             )
         }
     }
@@ -100,6 +114,8 @@ sealed interface WatchCommand {
     data object Next : WatchCommand
     data object Previous : WatchCommand
     data class SetVolume(val volume: Int) : WatchCommand
+    /** Laufende Musik der gewählten Gruppe in diesen Raum verschieben; der bisherige Raum verstummt. */
+    data class MoveTo(val roomUuid: String) : WatchCommand
 
     fun encode(): ByteArray = write { out ->
         out.writeInt(WearProtocol.VERSION)
@@ -117,6 +133,10 @@ sealed interface WatchCommand {
                 out.writeUTF("volume")
                 out.writeInt(volume)
             }
+            is MoveTo -> {
+                out.writeUTF("move")
+                out.writeUTF(roomUuid)
+            }
         }
     }
 
@@ -132,6 +152,7 @@ sealed interface WatchCommand {
                 "next" -> Next
                 "previous" -> Previous
                 "volume" -> SetVolume(input.readInt().coerceIn(0, 100))
+                "move" -> MoveTo(input.readUTF())
                 else -> null
             }
         }

@@ -21,6 +21,7 @@ class WearProtocolTest {
             isPlaying = true,
             volume = 23,
             error = "Bei dieser Quelle nicht möglich",
+            moveTargets = listOf(WatchRoom("RINCON_2", "Küche"), WatchRoom("RINCON_3", "Bad")),
         )
 
         val decoded = WatchState.decode(state.encode())
@@ -44,6 +45,7 @@ class WearProtocolTest {
             WatchCommand.Next,
             WatchCommand.Previous,
             WatchCommand.SetVolume(42),
+            WatchCommand.MoveTo("RINCON_3"),
         )
         commands.forEach { assertEquals(it, WatchCommand.decode(it.encode())) }
     }

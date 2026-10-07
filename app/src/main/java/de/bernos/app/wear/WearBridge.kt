@@ -55,10 +55,11 @@ class WearBridge(
                 dataMap.putByteArray(WearProtocol.STATE_KEY, state.encode())
                 cover(state.coverUrl)?.let { dataMap.putAsset(WearProtocol.COVER_ASSET, Asset.createFromBytes(it)) }
             }.asPutDataRequest().setUrgent()
-            dataClient.putDataItem(request).await()
+            val item = dataClient.putDataItem(request).await()
+            Log.d(TAG, "Zustand veröffentlicht: Raum=${state.selectedGroupId}, Titel=${state.title}, Cover=${request.assets.isNotEmpty()}, ${item.uri}")
         } catch (e: Exception) {
             // Ohne Google-Play-Dienste oder Uhr gibt es schlicht keine Uhr-Anbindung.
-            Log.d(TAG, "Zustand für die Uhr nicht veröffentlicht: ${e.message}")
+            Log.w(TAG, "Zustand für die Uhr nicht veröffentlicht", e)
         }
     }
 

@@ -1,9 +1,7 @@
 package de.bernos.wear.ui
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +20,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +45,7 @@ import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.FilledIconButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconButton
@@ -68,6 +68,7 @@ interface WearActions {
     fun next()
     fun previous()
     fun setVolume(volume: Int)
+    fun moveTo(roomUuid: String)
     fun refresh()
     fun reconnect()
 }
@@ -77,26 +78,36 @@ private const val ROOMS = "rooms"
 
 @Composable
 fun BernosWear(state: WatchState?, cover: ImageBitmap?, connection: PhoneConnection, actions: WearActions) {
+    // Die Navigation baut ihre Ziele nur einmal auf. Würden sie die Parameter direkt einfangen,
+    // bliebe der erste Zustand für immer stehen; daher über State-Objekte lesen.
+    val currentState by rememberUpdatedState(state)
+    val currentCover by rememberUpdatedState(cover)
+    val currentConnection by rememberUpdatedState(connection)
     MaterialTheme {
         AppScaffold {
             val navController = rememberSwipeDismissableNavController()
             SwipeDismissableNavHost(navController = navController, startDestination = HOME) {
                 composable(HOME) {
+                    val state = currentState
                     when {
-                        state == null && connection == PhoneConnection.UNREACHABLE -> PhoneUnreachable(actions::reconnect)
+                        state == null && currentConnection == PhoneConnection.UNREACHABLE -> PhoneUnreachable(actions::reconnect)
                         state == null -> Connecting()
                         state.selectedGroup == null -> RoomList(state, actions::selectGroup, actions::refresh)
-                        else -> PlayerScreen(state, cover, actions, onOpenRooms = { navController.navigate(ROOMS) })
+                        else -> PlayerScreen(state, currentCover, actions, onOpenRooms = { navController.navigate(ROOMS) })
                     }
                 }
                 composable(ROOMS) {
                     RoomList(
-                        state = state ?: WatchState(),
+                        state = currentState ?: WatchState(),
                         onSelect = { id ->
                             actions.selectGroup(id)
                             navController.popBackStack()
                         },
                         onRefresh = actions::refresh,
+                        onMoveTo = { uuid ->
+                            actions.moveTo(uuid)
+                            navController.popBackStack()
+                        },
                     )
                 }
             }
@@ -141,11 +152,16 @@ private fun PhoneUnreachable(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun RoomList(state: WatchState, onSelect: (String) -> Unit, onRefresh: () -> Unit) {
+private fun RoomList(
+    state: WatchState,
+    onSelect: (String) -> Unit,
+    onRefresh: () -> Unit,
+    onMoveTo: ((String) -> Unit)? = null,
+) {
     val listState = rememberScalingLazyListState()
     ScreenScaffold(scrollState = listState) { contentPadding ->
         ScalingLazyColumn(state = listState, contentPadding = contentPadding, modifier = Modifier.fillMaxSize()) {
-            item { ListHeader { Text(stringResource(R.string.rooms)) } }
+            item { ListHeader { Text(stringResource(if (state.selectedGroup != null) R.string.control_room else R.string.rooms)) } }
             if (state.groups.isEmpty()) {
                 item {
                     Text(
@@ -172,6 +188,20 @@ private fun RoomList(state: WatchState, onSelect: (String) -> Unit, onRefresh: (
                     },
                     label = { Text(group.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 )
+            }
+            // Verschieben nur anbieten, wenn in der gewählten Gruppe etwas läuft oder pausiert ist.
+            val hasMusic = state.selectedGroup != null && (state.isPlaying || state.title != null)
+            if (onMoveTo != null && hasMusic && state.moveTargets.isNotEmpty()) {
+                item { ListHeader { Text(stringResource(R.string.move_music_here), textAlign = TextAlign.Center) } }
+                items(state.moveTargets, key = { "move-" + it.uuid }) { room ->
+                    Button(
+                        onClick = { onMoveTo(room.uuid) },
+                        modifier = Modifier.fillMaxWidth().testTag("verschieben-${room.uuid}"),
+                        colors = ButtonDefaults.outlinedButtonColors(),
+                        icon = { Icon(painterResource(R.drawable.ic_move_here), contentDescription = null) },
+                        label = { Text(room.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                    )
+                }
             }
             state.error?.let { error ->
                 item { Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center) }
@@ -209,7 +239,6 @@ private fun PlayerScreen(state: WatchState, cover: ImageBitmap?, actions: WearAc
             Modifier
                 .fillMaxSize()
                 .onRotaryScrollEvent { event ->
-                    Log.d("BernosWear", "Lünette: ${event.verticalScrollPixels} px")
                     rotaryPixels += event.verticalScrollPixels
                     val steps = (rotaryPixels / ROTARY_PIXELS_PER_STEP).toInt()
                     if (steps != 0 && state.volume != null) {
@@ -239,13 +268,13 @@ private fun PlayerScreen(state: WatchState, cover: ImageBitmap?, actions: WearAc
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    group.name,
-                    modifier = Modifier.clickable(onClick = onOpenRooms).testTag("raum").padding(4.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                // Deutlich als Knopf erkennbar: Hier geht es zur Raumliste.
+                CompactButton(
+                    onClick = onOpenRooms,
+                    modifier = Modifier.testTag("raum"),
+                    colors = ButtonDefaults.filledTonalButtonColors(),
+                    icon = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = stringResource(R.string.choose_room)) },
+                    label = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 )
                 Text(
                     state.title ?: state.album ?: stringResource(R.string.nothing_playing),

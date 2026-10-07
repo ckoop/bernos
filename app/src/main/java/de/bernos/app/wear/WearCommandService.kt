@@ -1,5 +1,6 @@
 package de.bernos.app.wear
 
+import android.util.Log
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import de.bernos.app.BernosApp
@@ -16,6 +17,7 @@ class WearCommandService : WearableListenerService() {
     override fun onMessageReceived(event: MessageEvent) {
         if (event.path != WearProtocol.COMMAND_PATH) return
         val command = WatchCommand.decode(event.data) ?: return
+        Log.d("WearCommandService", "Befehl von der Uhr: $command")
         val app = application as BernosApp
         val controller = app.controller
         when (command) {
@@ -33,6 +35,7 @@ class WearCommandService : WearableListenerService() {
             WatchCommand.Next -> controller.next()
             WatchCommand.Previous -> controller.previous()
             is WatchCommand.SetVolume -> controller.setVolume(command.volume)
+            is WatchCommand.MoveTo -> controller.movePlaybackTo(command.roomUuid)
         }
     }
 

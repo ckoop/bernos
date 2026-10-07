@@ -52,6 +52,7 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
     private val pendingVolume = MutableStateFlow<Int?>(null)
 
     private val listener = DataClient.OnDataChangedListener { events ->
+        Log.d(TAG, "Data-Layer-Ereignisse: ${events.count}")
         // Der Puffer wird nach dem Aufruf freigegeben, daher die Daten sofort herauslösen.
         events.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == WearProtocol.STATE_PATH }
             .map { it.dataItem.freeze() }
@@ -108,6 +109,7 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
                 return
             }
             messageClient.sendMessage(node.id, WearProtocol.COMMAND_PATH, command.encode()).await()
+            Log.d(TAG, "Befehl gesendet: $command an ${node.displayName}")
             _connection.value = PhoneConnection.CONNECTED
         } catch (e: Exception) {
             Log.w(TAG, "Befehl nicht gesendet: ${e.message}")
@@ -118,6 +120,7 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
     private fun apply(item: DataItem) {
         val dataMap = DataMapItem.fromDataItem(item).dataMap
         val state = dataMap.getByteArray(WearProtocol.STATE_KEY)?.let { WatchState.decode(it) } ?: return
+        Log.d(TAG, "Zustand empfangen: Raum=${state.selectedGroupId}, Titel=${state.title}, ${item.uri}")
         _state.value = state
         _connection.value = PhoneConnection.CONNECTED
         if (state.coverUrl != coverUrl) {

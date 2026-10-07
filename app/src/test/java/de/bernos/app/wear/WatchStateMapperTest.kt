@@ -49,6 +49,8 @@ class WatchStateMapperTest {
         assertEquals("https://cdn.example.org/logo.png", watch.coverUrl)
         assertTrue(watch.isPlaying)
         assertEquals(23, watch.volume)
+        // Alle Räume außer dem steuernden, auch Mitglieder der eigenen Gruppe.
+        assertEquals(listOf("Bad", "Küche"), watch.moveTargets.map { it.name })
     }
 
     @Test
@@ -64,5 +66,10 @@ class WatchStateMapperTest {
         assertNull(watch.title)
         assertNull(watch.volume)
         assertFalse(watch.isPlaying)
+    }
+
+    @Test
+    fun `ohne gewaehlte Gruppe gibt es keine Ziele zum Verschieben`() {
+        assertEquals(emptyList<Any>(), SonosState(groups = groups).toWatchState().moveTargets)
     }
 }

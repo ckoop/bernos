@@ -16,5 +16,7 @@
     <string name="next">Nächster Titel</string>
     <string name="previous">Vorheriger Titel</string>
     <string name="choose_room">Raum wählen</string>
+    <string name="control_room">Raum steuern</string>
+    <string name="move_music_here">Musik hierher verschieben</string>
     <string name="volume_percent">Lautstärke %1$d</string>
 </resources>
