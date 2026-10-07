@@ -3,9 +3,11 @@
 Bernos ist eine Android-App zur Steuerung von Sonos-Lautsprechern, mit Wear-OS-Uhr als
 Fernbedienung. Bernos ist ein privates Projekt und steht in keiner Verbindung zu Sonos, Inc.
 
-## Stand: Phase 2
+## Stand: Phase 3 abgeschlossen (Version 0.3.3)
 
-An echten Sonos-Lautsprechern erfolgreich getestet (Android 16, Galaxy Watch als Uhr).
+An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy Watch7).
+
+### Handy
 
 - Findet die Sonos-Lautsprecher im WLAN automatisch (SSDP und mDNS); falls der Router das blockiert,
   lässt sich ein Lautsprecher per IP-Adresse hinzufügen.
@@ -20,6 +22,19 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Android 16, Galaxy Watch als
   Sperrbildschirm und **in der Mediensteuerung der Wear-OS-Uhr**. Die Lautstärketasten des
   Handys regeln Sonos.
 
+### Uhr (Wear OS)
+
+Eigene Uhr-App, die über das Handy steuert (das Handy muss Bernos installiert haben und in der
+Nähe sein; es spricht mit Sonos, die Uhr nur mit dem Handy):
+
+- **Raumliste:** Raum zum Steuern wählen; laufende Räume sind markiert.
+- **Musik hierher verschieben:** laufende Musik in einen anderen Raum schicken.
+- **Wiedergabe:** Cover bzw. Senderlogo als Hintergrund, Titel, Künstler,
+  Zurück/Abspielen/Weiter, **Lautstärke über die Lünette** bzw. Drehkrone.
+- **Kachel** neben dem Zifferblatt: Bernos, Raum, Titel mit Cover im Hintergrund und
+  Steuerknöpfe – ohne die App zu öffnen.
+- **Komplikation** fürs Zifferblatt (kurzer oder langer Text) mit dem laufenden Titel.
+
 Die Ace-Kopfhörer lassen sich nicht über die App umschalten: Sonos bietet für
 „TV Audio Swap“ keine Schnittstelle. Siehe [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -28,10 +43,13 @@ Die Ace-Kopfhörer lassen sich nicht über die App umschalten: Sonos bietet für
 | Modul | Inhalt |
 |---|---|
 | `sonos-core` | Reines Kotlin ohne Android-Abhängigkeiten: Suche, SOAP-Befehle, Auswertung von Titeln und Raumaufteilung, UPnP-Ereignisse, `SonosController` als zentrale Steuerung. Mit Unit-Tests. |
-| `app` | Android-App (Jetpack Compose) und `PlaybackService` für die Mediensitzung. |
+| `app` | Android-App (Jetpack Compose), `PlaybackService` für die Mediensitzung, Brücke zur Uhr. |
+| `wear-protocol` | Reines Kotlin: Zustand und Befehle zwischen Handy und Uhr samt Binärformat. Mit Tests. |
+| `wear` | Wear-OS-App (Compose for Wear OS), Kachel und Komplikation. |
 
 Die Kommunikation läuft ausschließlich lokal im WLAN über die UPnP-Schnittstelle der
-Lautsprecher (HTTP, Port 1400). Es wird kein Sonos-Konto benötigt.
+Lautsprecher (HTTP, Port 1400). Es wird kein Sonos-Konto benötigt. Handy und Uhr tauschen
+sich über die Wearable Data Layer API aus.
 
 ## Version
 
@@ -43,19 +61,29 @@ zu sehen am Ende der Raumliste.
 Voraussetzungen: JDK 17 und das Android SDK (z. B. über Android Studio).
 
 ```sh
-./gradlew :sonos-core:test        # Tests des Sonos-Kerns
-./gradlew :app:testDebugUnitTest  # Oberflächentests (Robolectric)
-./gradlew :app:assembleDebug      # APK unter app/build/outputs/apk/debug/
+./gradlew :sonos-core:test :wear-protocol:test   # Tests von Sonos-Kern und Uhr-Protokoll
+./gradlew :app:testDebugUnitTest                 # Oberflächentests Handy (Robolectric)
+./gradlew :wear:testDebugUnitTest                # Oberflächen- und Kacheltests Uhr
+./gradlew :app:assembleDebug                     # Handy-APK unter app/build/outputs/apk/debug/
+./gradlew :wear:assembleDebug                    # Uhr-APK unter wear/build/outputs/apk/debug/
 ```
 
-Jeder Push baut die App außerdem auf GitHub Actions; die fertige APK liegt dort als
-Artefakt `bernos-debug-apk` zum Herunterladen.
+Jeder Push baut beide Apps außerdem auf GitHub Actions; die fertigen APKs liegen dort als
+Artefakte `bernos-debug-apk` (Handy) und `bernos-wear-debug-apk` (Uhr).
 
 ## Auf dem Handy installieren
 
 1. APK aus dem GitHub-Actions-Lauf herunterladen (oder selbst bauen).
 2. Auf dem Handy öffnen und die Installation aus unbekannten Quellen erlauben.
 3. Handy muss im selben WLAN wie die Sonos-Lautsprecher sein.
+
+## Auf der Uhr installieren
+
+Auf der Uhr unter Entwickleroptionen „Kabelloses Debugging“ einschalten, koppeln
+(`adb pair <IP:Port>`) und `adb install -r wear-debug.apk`. Handy- und Uhr-App müssen mit
+demselben Schlüssel signiert sein (beide aus demselben Build bzw. CI-Lauf) und sollten dieselbe
+Version haben. Danach: Kachel über „+ Kachel hinzufügen“, Komplikation über „Zifferblatt
+anpassen“ einrichten.
 
 Installation per `adb` auf Xiaomi/POCO: In den Entwickleroptionen „Über USB installieren“
 einschalten und die Abfrage auf dem Handy bestätigen, sonst bricht die Installation mit

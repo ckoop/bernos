@@ -114,23 +114,29 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
   Lehren: Ziele von `SwipeDismissableNavHost` dürfen keinen Zustand einfangen (über
   `rememberUpdatedState` lesen); mehrfache `adb shell am start` erzeugten zwei Instanzen →
   `singleTask`. Galaxy Watch verliert WLAN-Debugging oft beim Ausschalten des Bildschirms.
+- Phase 3, Teil 2 ✅ Kachel und Komplikation (07.10.2026 an Galaxy Watch7 bestätigt). Lehren:
+  `protolayout-material`-Text ist ohne `setColor` dunkelgrau (ON_PRIMARY); `lastClickableId`
+  kommt nur in der Anfrage direkt nach dem Tipp, spätere Aktualisierungen haben sie leer.
+  **Phase 3 abgeschlossen** (Version 0.3.3). 1.0.0 erst, wenn es sich im Alltag bewährt hat.
 
 ## Todos
 
 1. **Gerätetest vervollständigen**: die einzelnen Suchwege (SSDP/mDNS/IP) prüfen. Installation: `adb install -r app/build/outputs/apk/debug/app-debug.apk`; auf
    Xiaomi muss in den Entwickleroptionen „Über USB installieren“ aktiv sein und die Abfrage auf dem
    Handy bestätigt werden. Gefundene Abweichungen in `FakeSonosSystem` nachbilden und als Test festhalten.
-2. **Phase 3, Teil 2 – Tile und Komplikation** für die Uhr (Titel + Play/Pause bzw. Raum/Titel).
-   Danach README und ROADMAP für Phase 3 abschließen. Offen außerdem: CI-Commit für die Uhr-App
-   pushen, sobald das GitHub-Token den `workflow`-Scope hat (`gh auth refresh -s workflow`).
-3. **Phase 4 – Sonos Ace (offen, ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
+2. **Phase 4 – Sonos Ace (offen, ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
    Schnittstelle; die Ace hängt per Bluetooth am Handy, nicht im WLAN. Optionen: Content-Taste
    (geht heute), Sonos-App per Bedienungshilfe fernsteuern (fragil), Bluetooth-Protokoll
    analysieren (aufwendig). Vor jedem Aufwand mit dem Nutzer abstimmen.
-4. Kleinere offene Punkte:
+3. Kleinere offene Punkte:
    - Release-Signatur einrichten (Release nutzt derzeit den Debug-Schlüssel).
    - Ab Android 17 (API 37) prüfen, ob eine Berechtigung für das lokale Netz nötig ist.
    - Raumliste zeigt noch nicht, was in den einzelnen Räumen läuft.
    - Raumlautstärke wird nur per Polling aktualisiert (keine RenderingControl-Abos pro Mitglied).
    - Stummschalten (`setMuted`) ist im Controller vorhanden, aber nicht in der Oberfläche.
    - Lint ist nicht Teil der CI; bei Gelegenheit `:app:lintDebug` aufnehmen und Befunde beheben.
+   - Uhr: ungeprüft, ob sich Kachel/Komplikation bei geschlossener Uhr-App aktualisieren, wenn
+     sich in der Sonos-App etwas ändert (StateListenerService). Die Handy-App fragt ohne
+     Herzschlag der Uhr nur, solange ihr Prozess lebt bzw. der PlaybackService läuft.
+   - Uhr: weitere Komplikationsformen (nur Symbol, kleines Cover) – vom Nutzer zurückgestellt.
+1.0.0 vergeben, wenn der Nutzer bestätigt, dass Handy und Uhr im Alltag stabil laufen.

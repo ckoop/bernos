@@ -16,13 +16,16 @@ Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wea
 - Erster Test an echten Lautsprechern bestanden (Handy mit Android 16, Galaxy Watch).
   Radio (TuneIn) zeigt Titel und Senderlogo. Noch offen: die einzelnen Suchwege gezielt prüfen.
 
-## Phase 3 – Eigene Wear-OS-App
+## Phase 3 – Eigene Wear-OS-App ✅
 - Modul `wear` mit Compose for Wear OS.
 - Handy bleibt die Zentrale; Uhr spricht über die Wearable Data Layer API
   (`MessageClient` für Befehle, `DataClient` für Status und Cover).
 - Raumauswahl, Cover, Lautstärke über Drehkrone/Lünette, Kachel (Tile) und Komplikation.
 - Teil 1 ✅ (an Galaxy Watch7 getestet): Raumliste, Wiedergabe mit Cover, Steuerung, Lautstärke
-  über die Lünette, Raum wechseln und Musik verschieben. Teil 2 offen: Tile und Komplikation.
+  über die Lünette, Raum wechseln und Musik verschieben.
+- Teil 2 ✅ (an Galaxy Watch7 getestet): Kachel mit Raum, Titel, Cover im Hintergrund und
+  Steuerknöpfen; Komplikation (kurzer/langer Text) mit dem laufenden Titel.
+- Bewusst weggelassen: weitere Komplikationsformen (nur Symbol, kleines Cover-Bild).
 
 ## Phase 4 – Sonos Ace (offen)
 Sonos bietet für „TV Audio Swap“ keine öffentliche Schnittstelle; die Ace ist kein
