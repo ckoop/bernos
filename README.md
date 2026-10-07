@@ -41,7 +41,7 @@ Nähe sein; es spricht mit Sonos, die Uhr nur mit dem Handy):
 - **Kachel** neben dem Zifferblatt: Bernos, Raum, Titel mit Cover im Hintergrund und
   Steuerknöpfe – ohne die App zu öffnen.
 - **Komplikation** fürs Zifferblatt (kurzer oder langer Text) mit dem laufenden Titel.
-- **Favoriten** über den Stern neben dem Raum abspielen.
+- **Favoriten** über den Stern oben in der Wiedergabe abspielen.
 
 **Einschränkung:** Das Medien-Symbol unten auf dem Zifferblatt gehört zur System-Mediensteuerung
 von Wear OS und öffnet deren Player, nicht Bernos. Wear OS übernimmt die Wiedergabe des Handys

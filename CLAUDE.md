@@ -136,9 +136,9 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
   `ConfigureSleepTimer`/`GetRemainingSleepTimerDuration`. Protokoll Version 5.
 - Phase 4 ✅ Sonos-Favoriten (07.10.2026, Version 0.4.3): Browse `FV:2`, Sender direkt,
   Playlists/Alben über die Warteschlange – beides an echten Geräten bestätigt (TuneIn-Sender,
-  Spotify-Playlist). Handy: Reihe "Favoriten"; Uhr: Stern-Knopf neben dem Raum (unten war auf
-  dem runden Bildschirm kein Platz – Sichtbarkeit in Uhr-Tests immer mit `assertIsDisplayed`
-  und langen Texten prüfen). Verknüpfungen (`shortcut`) gehen nur in der Sonos-App.
+  Spotify-Playlist). Handy: Reihe "Favoriten"; Uhr (seit 0.4.9): Stern oben mittig, Raumknopf
+  mittig unter Abspielen. Der Test prüft, dass alle Ecken im runden Bildschirm liegen
+  (`assertIsDisplayed` prüft nur das Fenster; Robolectric misst Text zu schmal). Verknüpfungen (`shortcut`) gehen nur in der Sonos-App.
 
 ## Todos
 

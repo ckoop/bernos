@@ -414,31 +414,21 @@ private fun PlayerScreen(
                 )
             }
             Column(
-                Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 30.dp),
+                Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // Oben nebeneinander: Raum (zur Raumliste) und Favoriten. Unten wäre auf dem runden
-                // Bildschirm kein Platz mehr, dort wurde der Favoriten-Knopf abgeschnitten.
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CompactButton(
-                        onClick = onOpenRooms,
-                        modifier = Modifier.widthIn(max = 132.dp).testTag("raum"),
-                        colors = ButtonDefaults.filledTonalButtonColors(),
-                        icon = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = stringResource(R.string.choose_room)) },
-                        label = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    )
-                    if (state.favorites.isNotEmpty()) {
-                        FilledTonalIconButton(
-                            onClick = onOpenFavorites,
-                            modifier = Modifier.size(IconButtonDefaults.ExtraSmallButtonSize).testTag("favoriten"),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_star),
-                                contentDescription = stringResource(R.string.favorites),
-                                modifier = Modifier.size(IconButtonDefaults.SmallIconSize),
-                            )
-                        }
+                // Oben mittig die Favoriten, unten mittig der Raum – beide auf einer Linie mit Abspielen.
+                if (state.favorites.isNotEmpty()) {
+                    FilledTonalIconButton(
+                        onClick = onOpenFavorites,
+                        modifier = Modifier.size(IconButtonDefaults.ExtraSmallButtonSize).testTag("favoriten"),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_star),
+                            contentDescription = stringResource(R.string.favorites),
+                            modifier = Modifier.size(IconButtonDefaults.SmallIconSize),
+                        )
                     }
                 }
                 Text(
@@ -504,6 +494,13 @@ private fun PlayerScreen(
                         Icon(painterResource(R.drawable.ic_skip_next), stringResource(R.string.next))
                     }
                 }
+                CompactButton(
+                    onClick = onOpenRooms,
+                    modifier = Modifier.widthIn(max = 120.dp).testTag("raum"),
+                    colors = ButtonDefaults.filledTonalButtonColors(),
+                    icon = { Icon(painterResource(R.drawable.ic_speaker), contentDescription = stringResource(R.string.choose_room)) },
+                    label = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                )
                 state.error?.let { error ->
                     Text(
                         error,

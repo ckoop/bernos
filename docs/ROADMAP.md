@@ -34,7 +34,7 @@ Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wea
   `AddURIToQueue`, `x-rincon-queue:`), danach `Play`.
 - Verknüpfungen (`r:type` = `shortcut`, z. B. Bereiche von Sonos Radio) haben keine Adresse und
   gehen nur in der Sonos-App; Bernos weist darauf hin.
-- Handy: Reihe "Favoriten" in der Wiedergabe. Uhr: Stern-Knopf neben dem Raum.
+- Handy: Reihe "Favoriten" in der Wiedergabe. Uhr: Stern oben, Raumknopf mittig unter Abspielen.
 - An echten Geräten getestet (07.10.2026): Radiosender (TuneIn) und Spotify-Playlist als
   Favorit, auf Handy und Uhr.
 

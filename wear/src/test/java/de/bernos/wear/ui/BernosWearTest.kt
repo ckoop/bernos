@@ -5,6 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -23,6 +26,7 @@ import de.bernos.wearprotocol.WatchGroup
 import de.bernos.wearprotocol.WatchRoom
 import de.bernos.wearprotocol.WatchState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -147,6 +151,43 @@ class BernosWearTest {
 
         assertEquals(listOf("favorite:FV:2/3"), actions.calls)
         compose.onNodeWithText("Dexter And The Moonrocks").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Stern oben und Raum unten liegen mittig im runden Bildschirm`() {
+        val state = WatchState(
+            groups = listOf(WatchGroup("G1", "Wohnzimmer + Küche + Schlafzimmer", isPlaying = true)),
+            selectedGroupId = "G1",
+            title = "Ein sehr langer Liedtitel, der zwei Zeilen braucht",
+            artist = "Dexter And The Moonrocks",
+            isPlaying = true,
+            volume = 10,
+            favorites = listOf(WatchFavorite("FV:2/3", "STAR FM")),
+        )
+        compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, RecordingActions()) }
+
+        val root = compose.onRoot().getUnclippedBoundsInRoot()
+        val center = (root.left + root.right) / 2
+        val radius = (root.right - root.left) / 2
+        val stern = compose.onNodeWithTag("favoriten").getUnclippedBoundsInRoot()
+        val abspielen = compose.onNodeWithTag("abspielen").getUnclippedBoundsInRoot()
+        val raum = compose.onNodeWithTag("raum").getUnclippedBoundsInRoot()
+
+        // Nicht zusammengedrückt (der Platz reicht für alles).
+        assertTrue(raum.bottom - raum.top >= 32.dp && stern.bottom - stern.top >= 32.dp)
+        // Senkrecht übereinander und auf einer Achse mit Abspielen.
+        assertTrue(stern.bottom <= abspielen.top && abspielen.bottom <= raum.top)
+        listOf(stern, raum).forEach { assertEquals(center.value, ((it.left + it.right) / 2).value, 1f) }
+        // Alle Ecken innerhalb des Kreises, sonst schneidet der runde Rand sie ab. Robolectric misst Text
+        // viel zu schmal, daher den Raumknopf mit seiner Höchstbreite von 120 dp ansetzen.
+        val raumBreit = raum.copy(left = center - 60.dp, right = center + 60.dp)
+        listOf(stern, raumBreit, abspielen).forEach { box ->
+            listOf(box.left to box.top, box.right to box.top, box.left to box.bottom, box.right to box.bottom).forEach { (x, y) ->
+                val dx = (x - center).value
+                val dy = (y - center).value
+                assertTrue("Ecke ($x, $y) außerhalb des Kreises", dx * dx + dy * dy <= radius.value * radius.value)
+            }
+        }
     }
 
     @Test
