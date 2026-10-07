@@ -36,6 +36,12 @@ Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wea
   gehen nur in der Sonos-App; Bernos weist darauf hin.
 - Handy: Reihe "Favoriten" in der Wiedergabe. Uhr: Knopf "Favoriten" in der Wiedergabe.
 
+## Optional – Spotify-Login
+Spotify-Playlists, gespeicherte Alben und Suche direkt in Bernos (Handy und Uhr). Lokal über Sonos
+lässt sich Spotify nicht durchsuchen; geplant ist die offizielle Spotify-Schnittstelle zum
+Auflisten und das Abspielen über die Sonos-Kennung der Spotify-Inhalte. Bis dahin funktionieren
+Spotify-Playlists, die in der Sonos-App als Favorit gespeichert sind.
+
 ## Optional – Sonos Ace
 Sonos bietet für „TV Audio Swap“ keine öffentliche Schnittstelle; die Ace ist kein
 WLAN-Lautsprecher, sondern per Bluetooth mit dem Handy verbunden. Mögliche Wege:

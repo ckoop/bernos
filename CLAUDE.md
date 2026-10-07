@@ -129,11 +129,20 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
    Uhr-Knopf "Favoriten" (Protokoll Version 3). Beim Nutzer gibt es nur Radio-Favoriten (TuneIn)
    und Sonos-Radio-Verknüpfungen; der Weg über die Warteschlange (Playlists/Alben) ist nur gegen
    `FakeSonosSystem` getestet.
-3. **Optional – Sonos Ace (ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
+3. **Optional – Spotify-Login**: Spotify-Inhalte (eigene Playlists, gespeicherte Alben, Suche)
+   in Bernos auswählbar machen, auf Handy und unter dem Stern auf der Uhr. Lokal über Sonos lässt
+   sich Spotify nicht durchsuchen (SMAPI-Zugangsdaten bleiben in der Sonos-Cloud,
+   `/status/accounts` ist auf aktueller Firmware leer). Weg: offizielle Spotify Web API mit
+   OAuth (PKCE) zum Auflisten; abspielen lokal über die Sonos-Kennung
+   `x-rincon-cpcontainer:…spotify%3Aplaylist%3A<id>?sid=12…` mit passenden Metadaten
+   (wie SoCo-ShareLink), Spotify muss in der Sonos-App verknüpft sein. Nutzer muss eine App im
+   Spotify-Entwicklerportal anlegen. Bis dahin: Spotify-Playlists als Sonos-Favoriten speichern
+   (funktioniert über die Warteschlange). Einfachere Zwischenstufe wäre "Teilen → Bernos".
+4. **Optional – Sonos Ace (ggf. nicht machbar)**: „TV Audio Swap“ hat keine öffentliche
    Schnittstelle; die Ace hängt per Bluetooth am Handy, nicht im WLAN. Optionen: Content-Taste
    (geht heute), Sonos-App per Bedienungshilfe fernsteuern (fragil), Bluetooth-Protokoll
    analysieren (aufwendig). Vor jedem Aufwand mit dem Nutzer abstimmen.
-4. Kleinere offene Punkte:
+5. Kleinere offene Punkte:
    - Release-Signatur einrichten (Release nutzt derzeit den Debug-Schlüssel).
    - Ab Android 17 (API 37) prüfen, ob eine Berechtigung für das lokale Netz nötig ist.
    - Raumliste zeigt noch nicht, was in den einzelnen Räumen läuft.
