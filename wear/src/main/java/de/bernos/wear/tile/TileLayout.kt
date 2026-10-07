@@ -5,6 +5,7 @@ import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
 import androidx.wear.protolayout.DimensionBuilders.dp
+import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.material.Button
@@ -30,14 +31,21 @@ object TileLayout {
     const val ICON_PAUSE = "pause"
     const val ICON_NEXT = "next"
     const val ICON_PREVIOUS = "previous"
+    const val IMAGE_COVER = "cover"
 
     // Ohne ausdrückliche Farbe zeichnet protolayout-material Text in ON_PRIMARY (dunkelgrau),
     // gedacht für helle Knöpfe – auf dem schwarzen Kachelhintergrund kaum lesbar.
     private val TITLE_COLOR = argb(Colors.ON_SURFACE)
     private val SUBTITLE_COLOR = argb(0xFFBDC1C6.toInt())
     private val ROOM_COLOR = argb(Colors.PRIMARY)
+    private const val COVER_SCRIM = 0xB3000000.toInt()
 
-    fun build(context: Context, device: DeviceParameters, summary: NowPlayingSummary): LayoutElementBuilders.LayoutElement {
+    fun build(
+        context: Context,
+        device: DeviceParameters,
+        summary: NowPlayingSummary,
+        hasCover: Boolean = false,
+    ): LayoutElementBuilders.LayoutElement {
         val openApp = ModifiersBuilders.Clickable.Builder()
             .setId(ID_OPEN)
             .setOnClick(
@@ -56,6 +64,7 @@ object TileLayout {
         if (room == null) {
             val message = if (summary.connected) R.string.tile_no_room else R.string.connecting
             return PrimaryLayout.Builder(device)
+                .setPrimaryLabelTextContent(appName(context))
                 .setContent(
                     Text.Builder(context, context.getString(message))
                         .setTypography(Typography.TYPOGRAPHY_BODY1)
@@ -106,8 +115,9 @@ object TileLayout {
             )
             .build()
 
-        return PrimaryLayout.Builder(device)
-            .setPrimaryLabelTextContent(
+        val layout = PrimaryLayout.Builder(device)
+            .setPrimaryLabelTextContent(appName(context))
+            .setSecondaryLabelTextContent(
                 Text.Builder(context, room)
                     .setTypography(Typography.TYPOGRAPHY_CAPTION1)
                     .setColor(ROOM_COLOR)
@@ -116,7 +126,39 @@ object TileLayout {
             )
             .setContent(content)
             .build()
+        if (!hasCover) return layout
+
+        // Cover bzw. Senderlogo abgedunkelt im Hintergrund, wie in der Uhr-App.
+        return LayoutElementBuilders.Box.Builder()
+            .setWidth(expand())
+            .setHeight(expand())
+            .addContent(
+                LayoutElementBuilders.Image.Builder()
+                    .setResourceId(IMAGE_COVER)
+                    .setWidth(expand())
+                    .setHeight(expand())
+                    .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
+                    .build(),
+            )
+            .addContent(
+                LayoutElementBuilders.Box.Builder()
+                    .setWidth(expand())
+                    .setHeight(expand())
+                    .setModifiers(
+                        ModifiersBuilders.Modifiers.Builder()
+                            .setBackground(ModifiersBuilders.Background.Builder().setColor(argb(COVER_SCRIM)).build())
+                            .build(),
+                    )
+                    .build(),
+            )
+            .addContent(layout)
+            .build()
     }
+
+    private fun appName(context: Context) = Text.Builder(context, context.getString(R.string.app_name))
+        .setTypography(Typography.TYPOGRAPHY_CAPTION2)
+        .setColor(SUBTITLE_COLOR)
+        .build()
 
     private fun button(context: Context, id: String, icon: String, description: Int, primary: Boolean): Button {
         // LoadAction: Die Kachel fordert sich neu an; der Dienst führt dann den Befehl aus.

@@ -27,13 +27,15 @@ class BernosTileService : TileService() {
                 TileLayout.ID_PREVIOUS -> phone.send(WatchCommand.Previous)
             }
             val summary = NowPlayingSummary.from(phone.awaitState())
+            val cover = phone.tileCover.value?.takeIf { summary.room != null }
             TileBuilders.Tile.Builder()
-                .setResourcesVersion(RESOURCES_VERSION)
+                // Neue Version bei neuem Cover, damit die Kachel die Bilder neu anfordert.
+                .setResourcesVersion(cover?.version ?: RESOURCES_VERSION)
                 // Keine regelmäßige Aktualisierung; neue Zustände vom Handy stoßen sie an.
                 .setFreshnessIntervalMillis(0)
                 .setTileTimeline(
                     TimelineBuilders.Timeline.fromLayoutElement(
-                        TileLayout.build(this@BernosTileService, requestParams.deviceConfiguration, summary),
+                        TileLayout.build(this@BernosTileService, requestParams.deviceConfiguration, summary, hasCover = cover != null),
                     ),
                 )
                 .build()
@@ -42,8 +44,26 @@ class BernosTileService : TileService() {
     override fun onTileResourcesRequest(
         requestParams: RequestBuilders.ResourcesRequest,
     ): ListenableFuture<ResourceBuilders.Resources> = SuspendToFutureAdapter.launchFuture {
+        val cover = applicationContext.phone.tileCover.value?.takeIf { it.version == requestParams.version }
         ResourceBuilders.Resources.Builder()
-            .setVersion(RESOURCES_VERSION)
+            .setVersion(requestParams.version)
+            .apply {
+                if (cover != null) {
+                    addIdToImageMapping(
+                        TileLayout.IMAGE_COVER,
+                        ResourceBuilders.ImageResource.Builder()
+                            .setInlineResource(
+                                ResourceBuilders.InlineImageResource.Builder()
+                                    .setData(cover.data)
+                                    .setWidthPx(cover.widthPx)
+                                    .setHeightPx(cover.heightPx)
+                                    .setFormat(ResourceBuilders.IMAGE_FORMAT_RGB_565)
+                                    .build(),
+                            )
+                            .build(),
+                    )
+                }
+            }
             .addIdToImageMapping(TileLayout.ICON_PLAY, image(R.drawable.ic_play))
             .addIdToImageMapping(TileLayout.ICON_PAUSE, image(R.drawable.ic_pause))
             .addIdToImageMapping(TileLayout.ICON_NEXT, image(R.drawable.ic_skip_next))

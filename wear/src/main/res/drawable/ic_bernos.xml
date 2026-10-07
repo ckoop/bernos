@@ -1,0 +1,33 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="52"
+    android:viewportHeight="52">
+    <!-- Bernos-Logo ("b" als Lautsprecher) ohne Hintergrund, für Kachel-Auswahl und Komplikation. -->
+    <group
+        android:translateX="-28"
+        android:translateY="-30.5">
+        <path
+            android:pathData="M38,36L38,62"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="6"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M48,52a10,10 0,1 1,0 20a10,10 0,1 1,0 -20z"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="6" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M48,59a3,3 0,1 1,0 6a3,3 0,1 1,0 -6z" />
+        <path
+            android:pathData="M62.55,49.79A19,19 0,0 1,62.55 74.21"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M67.15,45.93A25,25 0,0 1,67.15 78.07"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

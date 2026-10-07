@@ -1,6 +1,7 @@
 package de.bernos.wear
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
@@ -24,6 +25,10 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.nio.ByteBuffer
+
+/** Cover als unkomprimiertes RGB_565-Bild für die Kachel; [version] ändert sich mit dem Bild. */
+class TileImage(val data: ByteArray, val widthPx: Int, val heightPx: Int, val version: String)
 
 /** Wie gut die Uhr die Handy-App erreicht. */
 enum class PhoneConnection { CONNECTING, CONNECTED, UNREACHABLE }
@@ -42,6 +47,9 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
 
     private val _cover = MutableStateFlow<ImageBitmap?>(null)
     val cover: StateFlow<ImageBitmap?> = _cover.asStateFlow()
+
+    private val _tileCover = MutableStateFlow<TileImage?>(null)
+    val tileCover: StateFlow<TileImage?> = _tileCover.asStateFlow()
 
     private val _connection = MutableStateFlow(PhoneConnection.CONNECTING)
     val connection: StateFlow<PhoneConnection> = _connection.asStateFlow()
@@ -136,6 +144,7 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
             val asset = dataMap.getAsset(WearProtocol.COVER_ASSET)
             if (asset == null || state.coverUrl == null) {
                 _cover.value = null
+                _tileCover.value = null
             } else {
                 scope.launch { loadCover(asset, state.coverUrl) }
             }
@@ -146,11 +155,23 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
         val bitmap = runCatching {
             dataClient.getFdForAsset(asset).await().inputStream.use { BitmapFactory.decodeStream(it) }
         }.getOrNull()
-        if (url == coverUrl) _cover.value = bitmap?.asImageBitmap()
+        if (url != coverUrl) return
+        _cover.value = bitmap?.asImageBitmap()
+        _tileCover.value = bitmap?.let { toTileImage(it, url) }
+    }
+
+    /** Kacheln zeigen eingebettete Bilder am sichersten unkomprimiert; klein halten. */
+    private fun toTileImage(source: Bitmap, url: String?): TileImage {
+        val scaled = Bitmap.createScaledBitmap(source, TILE_COVER_PX, TILE_COVER_PX, true)
+        val rgb565 = scaled.copy(Bitmap.Config.RGB_565, false)
+        val buffer = ByteBuffer.allocate(rgb565.byteCount)
+        rgb565.copyPixelsToBuffer(buffer)
+        return TileImage(buffer.array(), rgb565.width, rgb565.height, version = "cover-${url.hashCode()}")
     }
 
     private companion object {
         const val TAG = "PhoneLink"
         const val VOLUME_THROTTLE_MS = 120L
+        const val TILE_COVER_PX = 160
     }
 }

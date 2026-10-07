@@ -31,7 +31,7 @@
         <service
             android:name=".tile.BernosTileService"
             android:exported="true"
-            android:icon="@drawable/ic_music_note"
+            android:icon="@drawable/ic_bernos"
             android:label="@string/tile_label"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
@@ -46,7 +46,7 @@
         <service
             android:name=".complication.BernosComplicationService"
             android:exported="true"
-            android:icon="@drawable/ic_music_note"
+            android:icon="@drawable/ic_bernos"
             android:label="@string/complication_label"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>

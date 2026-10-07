@@ -33,7 +33,7 @@ class BernosComplicationService : SuspendingComplicationDataSourceService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val icon = MonochromaticImage.Builder(
-            Icon.createWithResource(this, if (summary.isPlaying) R.drawable.ic_music_note else R.drawable.ic_speaker),
+            Icon.createWithResource(this, R.drawable.ic_bernos),
         ).build()
         val fallback = getString(if (summary.room == null) R.string.app_name else R.string.nothing_playing)
         val description = text(listOfNotNull(summary.room, summary.longText).joinToString(": ").ifEmpty { fallback })

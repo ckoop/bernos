@@ -25,15 +25,24 @@ class TileLayoutTest {
         .setScreenShape(DeviceParametersBuilders.SCREEN_SHAPE_ROUND)
         .build()
 
-    private fun layout(summary: NowPlayingSummary) = TileLayout.build(context, device, summary).toLayoutElementProto().toString()
+    private fun layout(summary: NowPlayingSummary, hasCover: Boolean = false) =
+        TileLayout.build(context, device, summary, hasCover).toLayoutElementProto().toString()
 
     @Test
     fun `laufender Titel mit Steuerknoepfen`() {
         val text = layout(NowPlayingSummary(true, "Wohnzimmer", "Roscoe", "Johnossi", isPlaying = true))
 
-        listOf("Wohnzimmer", "Roscoe", "Johnossi", TileLayout.ID_PREVIOUS, TileLayout.ID_PLAY_PAUSE, TileLayout.ID_NEXT, TileLayout.ICON_PAUSE)
+        listOf("Bernos", "Wohnzimmer", "Roscoe", "Johnossi", TileLayout.ID_PREVIOUS, TileLayout.ID_PLAY_PAUSE, TileLayout.ID_NEXT, TileLayout.ICON_PAUSE)
             .forEach { assertTrue("$it fehlt", text.contains(it)) }
         assertFalse(text.contains("\"${TileLayout.ICON_PLAY}\""))
+        assertFalse(text.contains("\"${TileLayout.IMAGE_COVER}\""))
+    }
+
+    @Test
+    fun `mit Cover liegt das Bild im Hintergrund`() {
+        val text = layout(NowPlayingSummary(true, "Wohnzimmer", "Roscoe", "Johnossi", isPlaying = true), hasCover = true)
+        assertTrue(text.contains("\"${TileLayout.IMAGE_COVER}\""))
+        assertTrue(text.contains("Roscoe"))
     }
 
     @Test
@@ -48,6 +57,7 @@ class TileLayoutTest {
         // Umlaute stehen in der Protobuf-Textdarstellung maskiert.
         assertTrue(text.contains("Kein Raum"))
         assertTrue(text.contains(TileLayout.ID_OPEN))
+        assertTrue(text.contains("Bernos"))
         assertFalse(text.contains(TileLayout.ID_PLAY_PAUSE))
     }
 }
