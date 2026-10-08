@@ -25,6 +25,7 @@ class WearProtocolTest {
             moveTargets = listOf(WatchRoom("RINCON_2", "Küche"), WatchRoom("RINCON_3", "Bad")),
             favorites = listOf(WatchFavorite("FV:2/3", "STAR FM Maximum Rock Berlin")),
             sleepTimerMinutes = 25,
+            headphones = WatchHeadphones("Sonos Ace", 64),
         )
 
         val decoded = WatchState.decode(state.encode())

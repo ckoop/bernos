@@ -17,13 +17,14 @@ import de.bernos.app.ui.BernosTheme
 
 class MainActivity : ComponentActivity() {
 
-    private val notificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* Benachrichtigung ist optional */ }
+    // Beides ist optional: Benachrichtigung für die Steuerung, Bluetooth für den Akku der Sonos Ace.
+    private val permissionRequest =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { (application as BernosApp).headphones.refresh() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        requestNotificationPermission()
+        requestOptionalPermissions()
 
         val app = application as BernosApp
         val controller = app.controller
@@ -53,7 +54,8 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(state.selectedGroupId) {
                     if (state.selectedGroupId != null) PlaybackService.start(this@MainActivity)
                 }
-                BernosScreen(state, actions)
+                val headphones = app.headphones.battery.collectAsStateWithLifecycle().value
+                BernosScreen(state, actions, headphones)
             }
         }
     }
@@ -64,6 +66,7 @@ class MainActivity : ComponentActivity() {
         controller.resumeTracking()
         // Raumliste: was in allen Räumen läuft und Akkustand, solange die App sichtbar ist.
         controller.startOverview()
+        (application as BernosApp).headphones.refresh()
         if (controller.state.value.selectedGroupId != null) PlaybackService.start(this)
     }
 
@@ -72,11 +75,11 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+    private fun requestOptionalPermissions() {
+        val wanted = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) add(Manifest.permission.BLUETOOTH_CONNECT)
+        }.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        if (wanted.isNotEmpty()) permissionRequest.launch(wanted.toTypedArray())
     }
 }

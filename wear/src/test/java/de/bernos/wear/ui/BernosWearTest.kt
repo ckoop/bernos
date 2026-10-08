@@ -23,6 +23,7 @@ import de.bernos.wear.BuildConfig
 import de.bernos.wear.PhoneConnection
 import de.bernos.wearprotocol.WatchFavorite
 import de.bernos.wearprotocol.WatchGroup
+import de.bernos.wearprotocol.WatchHeadphones
 import de.bernos.wearprotocol.WatchRoom
 import de.bernos.wearprotocol.WatchState
 import org.junit.Assert.assertEquals
@@ -266,6 +267,15 @@ class BernosWearTest {
 
         compose.onNodeWithText("▶ Roscoe · Johnossi").assertIsDisplayed()
         compose.onNodeWithText("Get Lucky · Akku 80 %").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Raumliste zeigt den Akku der Sonos Ace`() {
+        val state = WatchState(groups = groups, headphones = WatchHeadphones("Sonos Ace", 64))
+        compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, RecordingActions()) }
+
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("kopfhoerer"))
+        compose.onNodeWithText("Sonos Ace · Akku 64 %").assertIsDisplayed()
     }
 
     @Test

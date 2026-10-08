@@ -223,6 +223,22 @@ private fun RoomList(
                     label = { Text(group.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 )
             }
+            // Sonos Ace: nur Anzeige, solange sie per Bluetooth mit dem Handy verbunden ist.
+            state.headphones?.let { ace ->
+                item(key = "kopfhoerer") {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("kopfhoerer")) {
+                        Icon(painterResource(R.drawable.ic_headphones), contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.size(6.dp))
+                        Text(
+                            stringResource(R.string.headphones_battery, ace.name, ace.batteryLevel),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (ace.batteryLevel < LOW_BATTERY) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
             // Verschieben nur anbieten, wenn in der gewählten Gruppe etwas läuft oder pausiert ist.
             val hasMusic = state.selectedGroup != null && (state.isPlaying || state.title != null)
             if (onMoveTo != null && hasMusic && state.moveTargets.isNotEmpty()) {
@@ -277,6 +293,8 @@ private fun RoomList(
         }
     }
 }
+
+private const val LOW_BATTERY = 20
 
 /** Zweite Zeile eines Raums: was läuft und, bei tragbaren Lautsprechern, der Akku. */
 @Composable

@@ -51,6 +51,11 @@ WLAN-Lautsprecher, sondern per Bluetooth mit dem Handy verbunden. Mögliche Wege
 2. Sonos-App per Bedienungshilfe/Tasker fernsteuern lassen – fragil.
 3. Bluetooth-Protokoll der Ace analysieren – aufwendig, kann jederzeit brechen.
 
+Erledigt (0.4.11): Akkustand der Ace auf Handy und Uhr, solange sie mit dem Handy verbunden ist.
+Android kennt ihn über das Freisprechprofil (wie in den Bluetooth-Einstellungen); gelesen über
+`BluetoothDevice.getBatteryLevel()` und die Meldung `BATTERY_LEVEL_CHANGED`, beides nicht offiziell
+freigegeben. Ohne Verbindung zum Handy ginge es nur über das eigene Protokoll von Sonos.
+
 ## Hinweise
 - Ab Android 17 (API 37) kann für den Zugriff aufs lokale Netz eine eigene Berechtigung
   nötig werden; beim Anheben von `targetSdk` prüfen.

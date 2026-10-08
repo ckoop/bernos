@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.net.wifi.WifiManager
 import android.util.Log
+import de.bernos.app.bluetooth.HeadphoneMonitor
 import de.bernos.app.wear.WearBridge
 import de.bernos.sonos.SonosController
 import de.bernos.sonos.SsdpDiscovery
@@ -17,6 +18,10 @@ class BernosApp : Application() {
     lateinit var controller: SonosController
         private set
 
+    /** Akkustand der Sonos Ace, solange sie per Bluetooth mit dem Handy verbunden ist. */
+    lateinit var headphones: HeadphoneMonitor
+        private set
+
     private lateinit var mdns: MdnsDiscovery
 
     override fun onCreate() {
@@ -27,7 +32,8 @@ class BernosApp : Application() {
             Log.i(DISCOVERY_TAG, "mDNS: Lautsprecher gefunden: $host")
             controller.addHost(host)
         }
-        WearBridge(this, controller, scope).start()
+        headphones = HeadphoneMonitor(this).apply { start() }
+        WearBridge(this, controller, headphones.battery, scope).start()
     }
 
     /** Sucht parallel per SSDP und mDNS; je nach Router funktioniert nur einer der beiden Wege. */

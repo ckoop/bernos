@@ -11,14 +11,16 @@ import coil3.toBitmap
 import com.google.android.gms.wearable.Asset
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
+import de.bernos.app.bluetooth.HeadphoneBattery
 import de.bernos.sonos.SonosController
 import de.bernos.wearprotocol.WatchState
 import de.bernos.wearprotocol.WearProtocol
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
@@ -30,6 +32,7 @@ import java.io.ByteArrayOutputStream
 class WearBridge(
     private val context: Context,
     private val controller: SonosController,
+    private val headphones: StateFlow<HeadphoneBattery?>,
     private val scope: CoroutineScope,
 ) {
     private val dataClient by lazy { Wearable.getDataClient(context) }
@@ -40,8 +43,7 @@ class WearBridge(
     @OptIn(FlowPreview::class)
     fun start() {
         scope.launch {
-            controller.state
-                .map { it.toWatchState() }
+            combine(controller.state, headphones) { state, headphones -> state.toWatchState(headphones) }
                 .distinctUntilChanged()
                 // Mehrere Änderungen kurz hintereinander (z. B. Lautstärke) zusammenfassen.
                 .debounce(DEBOUNCE_MS)

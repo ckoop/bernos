@@ -1,13 +1,15 @@
 package de.bernos.app.wear
 
+import de.bernos.app.bluetooth.HeadphoneBattery
 import de.bernos.sonos.SonosState
 import de.bernos.wearprotocol.WatchFavorite
 import de.bernos.wearprotocol.WatchGroup
+import de.bernos.wearprotocol.WatchHeadphones
 import de.bernos.wearprotocol.WatchRoom
 import de.bernos.wearprotocol.WatchState
 
 /** Verdichtet den Zustand des Controllers auf das, was die Uhr anzeigt. */
-internal fun SonosState.toWatchState(): WatchState {
+internal fun SonosState.toWatchState(headphones: HeadphoneBattery? = null): WatchState {
     val selectedPlaying = nowPlaying?.takeIf { it.groupId == selectedGroupId }
     return WatchState(
         groups = groups
@@ -42,5 +44,6 @@ internal fun SonosState.toWatchState(): WatchState {
         } ?: emptyList(),
         favorites = favorites.filter { it.isPlayable }.map { WatchFavorite(id = it.id, title = it.title) },
         sleepTimerMinutes = selectedPlaying?.sleepTimerRemainingMs?.let { ((it + 59_999) / 60_000).toInt() },
+        headphones = headphones?.let { WatchHeadphones(name = it.name, batteryLevel = it.level) },
     )
 }

@@ -13,6 +13,8 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy
   lässt sich ein Lautsprecher per IP-Adresse hinzufügen.
 - Zeigt alle Räume bzw. Gruppen an, jeweils mit **Cover und laufendem Titel** sowie dem
   **Akkustand** tragbarer Lautsprecher (z. B. Sonos Roam).
+- **Akkustand der Sonos Ace**, solange die Kopfhörer per Bluetooth mit dem Handy verbunden sind
+  (braucht die Berechtigung „Geräte in der Nähe“; erkannt am Namen „Sonos“ bzw. „Ace“).
 - **Räume gruppieren:** weitere Räume dazunehmen oder herausnehmen, Lautstärke pro Raum.
 - **Musik verschieben:** die laufende Musik mit einem Tipp in einen anderen Raum schicken.
 - Zeigt für den gewählten Raum Titel, Künstler, Album und **Albumcover** an, inkl. Fortschritt.
@@ -32,8 +34,8 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy
 Eigene Uhr-App, die über das Handy steuert (das Handy muss Bernos installiert haben und in der
 Nähe sein; es spricht mit Sonos, die Uhr nur mit dem Handy):
 
-- **Raumliste:** Raum zum Steuern wählen, mit laufendem Titel und Akkustand; dort auch der
-  **Schlaftimer**.
+- **Raumliste:** Raum zum Steuern wählen, mit laufendem Titel und Akkustand (auch der Sonos Ace,
+  wenn sie mit dem Handy verbunden ist); dort auch der **Schlaftimer**.
 - **Musik hierher verschieben:** laufende Musik in einen anderen Raum schicken.
 - **Wiedergabe:** Cover bzw. Senderlogo als Hintergrund, Titel, Künstler,
   Zurück/Abspielen/Weiter, **Lautstärke über die Lünette** bzw. Drehkrone, **Stummschalten**
@@ -50,7 +52,7 @@ nur den globalen Schalter "Medienelemente anzeigen", der das Symbol nicht entfer
 öffnest du über die App-Liste, die Kachel oder die Komplikation. Ab Wear OS 7 kann das System
 Bernos statt des Players öffnen; die Uhr-App ist dafür bereits angemeldet.
 
-Die Ace-Kopfhörer lassen sich nicht über die App umschalten: Sonos bietet für
+Die Ace-Kopfhörer zeigen in Bernos nur ihren Akkustand; umschalten lassen sie sich nicht: Sonos bietet für
 „TV Audio Swap“ keine Schnittstelle. Siehe [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Aufbau

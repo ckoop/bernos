@@ -155,6 +155,10 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
    Schnittstelle; die Ace hängt per Bluetooth am Handy, nicht im WLAN. Optionen: Content-Taste
    (geht heute), Sonos-App per Bedienungshilfe fernsteuern (fragil), Bluetooth-Protokoll
    analysieren (aufwendig). Vor jedem Aufwand mit dem Nutzer abstimmen.
+   Akkustand ✅ (0.4.11, an echten Geräten ungeprüft): `bluetooth/HeadphoneMonitor` liest ihn per
+   Reflexion (`getBatteryLevel`) und `BATTERY_LEVEL_CHANGED`, nur solange die Ace mit dem Handy
+   verbunden ist (Nutzer sah die Prozentzahl in den Bluetooth-Einstellungen). Berechtigung
+   `BLUETOOTH_CONNECT`; Protokoll Version 6 (`headphones`). Log: `adb logcat -s BernosAce`.
 3. **Ideen (vom Nutzer gesammelt, noch nicht beauftragt)**:
    - TV-Ton umschalten (Soundbar zurück auf den TV-Eingang, `x-sonos-htastream:`), dazu Nachtmodus
      und Sprachverbesserung – falls im Wohnzimmer eine Soundbar steht.

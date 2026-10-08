@@ -22,7 +22,7 @@ object WearProtocol {
     const val PHONE_CAPABILITY = "bernos_phone"
 
     /** Format-Version; bei inkompatiblen Änderungen erhöhen. */
-    const val VERSION = 5
+    const val VERSION = 6
 }
 
 /** Ein Raum bzw. eine Gruppe, wie die Uhr sie in der Liste zeigt. */
@@ -41,6 +41,12 @@ data class WatchGroup(
 data class WatchRoom(
     val uuid: String,
     val name: String,
+)
+
+/** Per Bluetooth mit dem Handy verbundener Sonos-Kopfhörer (Ace) mit Akkustand in Prozent. */
+data class WatchHeadphones(
+    val name: String,
+    val batteryLevel: Int,
 )
 
 /** Ein abspielbarer Sonos-Favorit. */
@@ -69,6 +75,8 @@ data class WatchState(
     val favorites: List<WatchFavorite> = emptyList(),
     /** Restminuten des Schlaftimers der gewählten Gruppe (aufgerundet); `null` = aus. */
     val sleepTimerMinutes: Int? = null,
+    /** Nur solange der Kopfhörer mit dem Handy verbunden ist. */
+    val headphones: WatchHeadphones? = null,
 ) {
     val selectedGroup: WatchGroup? get() = groups.firstOrNull { it.id == selectedGroupId }
 
@@ -104,6 +112,11 @@ data class WatchState(
             out.writeUTF(it.title)
         }
         out.writeInt(sleepTimerMinutes ?: -1)
+        out.writeBoolean(headphones != null)
+        headphones?.let {
+            out.writeUTF(it.name)
+            out.writeInt(it.batteryLevel)
+        }
     }
 
     companion object {
@@ -135,6 +148,7 @@ data class WatchState(
                 moveTargets = List(input.readInt()) { WatchRoom(uuid = input.readUTF(), name = input.readUTF()) },
                 favorites = List(input.readInt()) { WatchFavorite(id = input.readUTF(), title = input.readUTF()) },
                 sleepTimerMinutes = input.readInt().takeIf { it >= 0 },
+                headphones = if (input.readBoolean()) WatchHeadphones(name = input.readUTF(), batteryLevel = input.readInt()) else null,
             )
         }
     }

@@ -34,6 +34,7 @@
     <string name="minutes">%1$d Minuten</string>
     <string name="battery_level">Akku %1$d %%</string>
     <string name="battery_charging">Lädt · %1$d %%</string>
+    <string name="headphones_bluetooth">Kopfhörer · per Bluetooth verbunden</string>
     <plurals name="favorite_shortcuts">
         <item quantity="one">%1$d Verknüpfung lässt sich nur in der Sonos-App öffnen.</item>
         <item quantity="other">%1$d Verknüpfungen lassen sich nur in der Sonos-App öffnen.</item>

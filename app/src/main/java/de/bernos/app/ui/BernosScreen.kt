@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import de.bernos.app.BuildConfig
 import de.bernos.app.R
+import de.bernos.app.bluetooth.HeadphoneBattery
 import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
 import de.bernos.sonos.NowPlaying
@@ -96,7 +97,7 @@ interface BernosActions {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BernosScreen(state: SonosState, actions: BernosActions) {
+fun BernosScreen(state: SonosState, actions: BernosActions, headphones: HeadphoneBattery? = null) {
     val selected = state.selectedGroup
     BackHandler(enabled = selected != null) { actions.selectGroup(null) }
 
@@ -134,7 +135,7 @@ fun BernosScreen(state: SonosState, actions: BernosActions) {
                 )
             }
             if (selected == null) {
-                Box(Modifier.weight(1f)) { RoomList(state, actions::selectGroup, actions::addHost) }
+                Box(Modifier.weight(1f)) { RoomList(state, headphones, actions::selectGroup, actions::addHost) }
                 Text(
                     stringResource(R.string.version, BuildConfig.VERSION_NAME),
                     style = MaterialTheme.typography.labelSmall,
@@ -149,7 +150,7 @@ fun BernosScreen(state: SonosState, actions: BernosActions) {
 }
 
 @Composable
-private fun RoomList(state: SonosState, onSelectGroup: (String) -> Unit, onAddHost: (String) -> Unit) {
+private fun RoomList(state: SonosState, headphones: HeadphoneBattery?, onSelectGroup: (String) -> Unit, onAddHost: (String) -> Unit) {
     when {
         state.groups.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
             items(state.groups, key = { it.id }) { group ->
@@ -187,6 +188,18 @@ private fun RoomList(state: SonosState, onSelectGroup: (String) -> Unit, onAddHo
                     modifier = Modifier.clickable { onSelectGroup(group.id) },
                 )
                 HorizontalDivider()
+            }
+            // Die Ace ist kein Raum; sie erscheint nur mit Akkustand, solange sie mit dem Handy verbunden ist.
+            headphones?.let { ace ->
+                item(key = "kopfhoerer") {
+                    ListItem(
+                        headlineContent = { Text(ace.name) },
+                        supportingContent = { Text(stringResource(R.string.headphones_bluetooth)) },
+                        leadingContent = { Icon(painterResource(R.drawable.ic_headphones), contentDescription = null) },
+                        trailingContent = { BatteryLabel(BatteryStatus(level = ace.level, charging = false)) },
+                    )
+                    HorizontalDivider()
+                }
             }
         }
 

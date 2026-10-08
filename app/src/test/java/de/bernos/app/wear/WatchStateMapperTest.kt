@@ -1,5 +1,6 @@
 package de.bernos.app.wear
 
+import de.bernos.app.bluetooth.HeadphoneBattery
 import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
 import de.bernos.sonos.GroupPlayback
@@ -107,5 +108,14 @@ class WatchStateMapperTest {
     @Test
     fun `ohne gewaehlte Gruppe gibt es keine Ziele zum Verschieben`() {
         assertEquals(emptyList<Any>(), SonosState(groups = groups).toWatchState().moveTargets)
+    }
+
+    @Test
+    fun `Sonos Ace wird mit Akkustand uebernommen`() {
+        val watch = SonosState(groups = groups).toWatchState(HeadphoneBattery("Sonos Ace", 64))
+
+        assertEquals("Sonos Ace", watch.headphones?.name)
+        assertEquals(64, watch.headphones?.batteryLevel)
+        assertNull(SonosState(groups = groups).toWatchState().headphones)
     }
 }

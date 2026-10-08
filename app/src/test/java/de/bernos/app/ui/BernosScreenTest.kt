@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.bernos.app.BuildConfig
+import de.bernos.app.bluetooth.HeadphoneBattery
 import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
 import de.bernos.sonos.GroupPlayback
@@ -188,6 +189,14 @@ class BernosScreenTest {
         compose.onNodeWithText("▶ Roscoe · Johnossi").assertIsDisplayed()
         compose.onNodeWithText("Get Lucky · Daft Punk").assertIsDisplayed()
         compose.onNodeWithText("Akku 15 %").assertIsDisplayed()
+    }
+
+    @Test
+    fun raumliste_zeigt_akku_der_sonos_ace() {
+        compose.setContent { MaterialTheme { BernosScreen(SonosState(groups = groups), RecordingActions(), HeadphoneBattery("Sonos Ace", 64)) } }
+
+        compose.onNodeWithText("Sonos Ace").assertIsDisplayed()
+        compose.onNodeWithText("Akku 64 %").assertIsDisplayed()
     }
 
     @Test
