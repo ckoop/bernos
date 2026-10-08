@@ -102,6 +102,9 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
         when (command) {
             WatchCommand.PlayPause -> _state.update { it?.copy(isPlaying = !it.isPlaying) }
             is WatchCommand.SetMuted -> _state.update { it?.copy(muted = command.muted) }
+            is WatchCommand.SetNightMode -> _state.update { it?.copy(homeTheater = it.homeTheater?.copy(nightMode = command.enabled)) }
+            is WatchCommand.SetSpeechEnhancement ->
+                _state.update { it?.copy(homeTheater = it.homeTheater?.copy(speechEnhancement = command.enabled)) }
             is WatchCommand.SetVolume -> {
                 _state.update { it?.copy(volume = command.volume) }
                 pendingVolume.value = command.volume

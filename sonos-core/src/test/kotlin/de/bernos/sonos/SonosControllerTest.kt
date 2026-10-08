@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -22,7 +23,7 @@ class SonosControllerTest {
 
     @Before
     fun setUp() {
-        fake = FakeSonosSystem(listOf("Wohnzimmer", "Küche", "Bad"))
+        fake = FakeSonosSystem(listOf("Wohnzimmer", "Küche", "Bad"), homeTheaterRooms = setOf("Wohnzimmer"))
         fake.speaker("Wohnzimmer").apply {
             transport = "PLAYING"
             title = "Song A"
@@ -221,5 +222,63 @@ class SonosControllerTest {
         val state = awaitState("Fehlermeldung") { it.error != null }
         assertTrue(state.error!!.contains("steuert die Gruppe"))
         assertTrue(fake.calls.none { it.endsWith("BecomeCoordinatorOfStandaloneGroup") })
+    }
+
+    @Test
+    fun `Soundbar - Nachtmodus, Sprachverbesserung und TV-Ton`() = runBlocking {
+        controller.addHost(fake.speaker("Wohnzimmer").address)
+        val state = awaitState("drei Räume") { it.groups.size == 3 }
+        controller.selectGroup(state.groups.first { it.coordinator.roomName == "Wohnzimmer" }.id)
+        val loaded = awaitState("Soundbar erkannt") { it.nowPlaying?.homeTheater?.nightMode != null }
+        assertEquals(HomeTheaterState(uuid("Wohnzimmer"), tvActive = false, nightMode = false, speechEnhancement = false), loaded.nowPlaying!!.homeTheater)
+
+        controller.setNightMode(true)
+        awaitState("Nachtmodus an") { it.nowPlaying?.homeTheater?.nightMode == true }
+        awaitCondition("Beam im Nachtmodus") { fake.speaker("Wohnzimmer").nightMode == 1 }
+        controller.setSpeechEnhancement(true)
+        awaitCondition("Sprachverbesserung an") { fake.speaker("Wohnzimmer").dialogLevel == 1 }
+
+        controller.switchToTv()
+        val tv = awaitState("Fernseher läuft") { it.nowPlaying?.homeTheater?.tvActive == true }
+        assertEquals(SonosController.TV_TITLE, tv.nowPlaying!!.track?.title)
+        assertEquals("x-sonos-htastream:${uuid("Wohnzimmer")}:spdif", fake.speaker("Wohnzimmer").currentUri)
+        // Die Raumliste zeigt es auch.
+        awaitState("Übersicht zeigt Fernseher") { s -> s.groupPlayback[s.selectedGroupId]?.track?.title == SonosController.TV_TITLE }
+        Unit
+    }
+
+    @Test
+    fun `Soundbar in fremder Gruppe - TV-Ton loest sie heraus, die Auswahl folgt`() = runBlocking {
+        fake.speaker("Wohnzimmer").coordinatorUuid = uuid("Küche")
+        fake.speaker("Küche").apply {
+            transport = "PLAYING"
+            title = "Song K"
+        }
+        controller.addHost(fake.speaker("Küche").address)
+        val state = awaitState("zwei Gruppen") { it.groups.size == 2 }
+        controller.selectGroup(state.groups.first { it.coordinator.roomName == "Küche" }.id)
+        val grouped = awaitState("Soundbar in der Gruppe") { it.nowPlaying?.homeTheater != null }
+        assertEquals(false, grouped.nowPlaying!!.homeTheater!!.tvActive)
+
+        controller.switchToTv()
+        val tv = awaitState("Wohnzimmer spielt Fernseher") {
+            it.selectedGroup?.coordinator?.roomName == "Wohnzimmer" && it.nowPlaying?.homeTheater?.tvActive == true
+        }
+        assertEquals(listOf("Wohnzimmer"), tv.selectedGroup!!.members.map { it.roomName })
+        assertEquals(3, tv.groups.size)
+        assertEquals("PLAYING", fake.speaker("Küche").transport)
+    }
+
+    @Test
+    fun `Raum ohne Soundbar hat keine Fernseh-Funktionen`() = runBlocking {
+        controller.addHost(fake.speaker("Bad").address)
+        val state = awaitState("drei Räume") { it.groups.size == 3 }
+        controller.selectGroup(state.groups.first { it.coordinator.roomName == "Bad" }.id)
+        val bad = awaitState("Bad geladen") { it.nowPlaying != null }
+        assertNull(bad.nowPlaying!!.homeTheater)
+        controller.setNightMode(true)
+        controller.switchToTv()
+        delay(300)
+        assertTrue(fake.calls.none { it.endsWith(":SetEQ") || it == "Bad:SetAVTransportURI" })
     }
 }

@@ -62,6 +62,7 @@ import androidx.wear.compose.material3.LevelIndicatorDefaults
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
@@ -82,6 +83,9 @@ interface WearActions {
     fun setSleepTimer(minutes: Int)
     fun moveTo(roomUuid: String)
     fun playFavorite(favoriteId: String)
+    fun switchToTv()
+    fun setNightMode(enabled: Boolean)
+    fun setSpeechEnhancement(enabled: Boolean)
     fun refresh()
     fun reconnect()
 }
@@ -136,6 +140,12 @@ fun BernosWear(state: WatchState?, cover: ImageBitmap?, connection: PhoneConnect
                             navController.popBackStack()
                         },
                         onOpenSleepTimer = { navController.navigate(SLEEP_TIMER) },
+                        onSwitchToTv = {
+                            actions.switchToTv()
+                            navController.popBackStack()
+                        },
+                        onNightMode = actions::setNightMode,
+                        onSpeechEnhancement = actions::setSpeechEnhancement,
                     )
                 }
                 composable(SLEEP_TIMER) {
@@ -193,6 +203,9 @@ private fun RoomList(
     onRefresh: () -> Unit,
     onMoveTo: ((String) -> Unit)? = null,
     onOpenSleepTimer: (() -> Unit)? = null,
+    onSwitchToTv: (() -> Unit)? = null,
+    onNightMode: (Boolean) -> Unit = {},
+    onSpeechEnhancement: (Boolean) -> Unit = {},
 ) {
     val listState = rememberScalingLazyListState()
     ScreenScaffold(scrollState = listState) { contentPadding ->
@@ -268,6 +281,40 @@ private fun RoomList(
                             )
                         },
                         label = { Text(stringResource(R.string.sleep_timer)) },
+                    )
+                }
+            }
+            // Soundbar in der gewählten Gruppe: zurück zum Fernseher, Nachtmodus, Sprachverbesserung.
+            val homeTheater = state.homeTheater
+            if (onSwitchToTv != null && homeTheater != null) {
+                item { ListHeader { Text(stringResource(R.string.tv)) } }
+                item {
+                    Button(
+                        onClick = onSwitchToTv,
+                        enabled = !homeTheater.tvActive,
+                        modifier = Modifier.fillMaxWidth().testTag("tv-ton"),
+                        colors = ButtonDefaults.filledTonalButtonColors(),
+                        icon = { Icon(painterResource(R.drawable.ic_tv), contentDescription = null) },
+                        secondaryLabel = {
+                            Text(stringResource(if (homeTheater.tvActive) R.string.tv_active else R.string.tv_switch_hint), maxLines = 2)
+                        },
+                        label = { Text(stringResource(R.string.tv_sound)) },
+                    )
+                }
+                item {
+                    SwitchButton(
+                        checked = homeTheater.nightMode,
+                        onCheckedChange = onNightMode,
+                        modifier = Modifier.fillMaxWidth().testTag("nachtmodus"),
+                        label = { Text(stringResource(R.string.night_mode)) },
+                    )
+                }
+                item {
+                    SwitchButton(
+                        checked = homeTheater.speechEnhancement,
+                        onCheckedChange = onSpeechEnhancement,
+                        modifier = Modifier.fillMaxWidth().testTag("sprachverbesserung"),
+                        label = { Text(stringResource(R.string.speech_enhancement), maxLines = 2) },
                     )
                 }
             }

@@ -22,7 +22,7 @@ object WearProtocol {
     const val PHONE_CAPABILITY = "bernos_phone"
 
     /** Format-Version; bei inkompatiblen Änderungen erhöhen. */
-    const val VERSION = 6
+    const val VERSION = 7
 }
 
 /** Ein Raum bzw. eine Gruppe, wie die Uhr sie in der Liste zeigt. */
@@ -47,6 +47,13 @@ data class WatchRoom(
 data class WatchHeadphones(
     val name: String,
     val batteryLevel: Int,
+)
+
+/** Fernseh-Funktionen, wenn in der gewählten Gruppe eine Soundbar steckt. */
+data class WatchHomeTheater(
+    val tvActive: Boolean,
+    val nightMode: Boolean,
+    val speechEnhancement: Boolean,
 )
 
 /** Ein abspielbarer Sonos-Favorit. */
@@ -77,6 +84,8 @@ data class WatchState(
     val sleepTimerMinutes: Int? = null,
     /** Nur solange der Kopfhörer mit dem Handy verbunden ist. */
     val headphones: WatchHeadphones? = null,
+    /** Nur wenn die gewählte Gruppe eine Soundbar hat. */
+    val homeTheater: WatchHomeTheater? = null,
 ) {
     val selectedGroup: WatchGroup? get() = groups.firstOrNull { it.id == selectedGroupId }
 
@@ -117,6 +126,12 @@ data class WatchState(
             out.writeUTF(it.name)
             out.writeInt(it.batteryLevel)
         }
+        out.writeBoolean(homeTheater != null)
+        homeTheater?.let {
+            out.writeBoolean(it.tvActive)
+            out.writeBoolean(it.nightMode)
+            out.writeBoolean(it.speechEnhancement)
+        }
     }
 
     companion object {
@@ -149,6 +164,11 @@ data class WatchState(
                 favorites = List(input.readInt()) { WatchFavorite(id = input.readUTF(), title = input.readUTF()) },
                 sleepTimerMinutes = input.readInt().takeIf { it >= 0 },
                 headphones = if (input.readBoolean()) WatchHeadphones(name = input.readUTF(), batteryLevel = input.readInt()) else null,
+                homeTheater = if (input.readBoolean()) {
+                    WatchHomeTheater(tvActive = input.readBoolean(), nightMode = input.readBoolean(), speechEnhancement = input.readBoolean())
+                } else {
+                    null
+                },
             )
         }
     }
@@ -171,6 +191,10 @@ sealed interface WatchCommand {
     data class MoveTo(val roomUuid: String) : WatchCommand
     /** Favoriten in der gewählten Gruppe abspielen. */
     data class PlayFavorite(val favoriteId: String) : WatchCommand
+    /** Soundbar der gewählten Gruppe auf den Fernseher schalten. */
+    data object SwitchToTv : WatchCommand
+    data class SetNightMode(val enabled: Boolean) : WatchCommand
+    data class SetSpeechEnhancement(val enabled: Boolean) : WatchCommand
 
     fun encode(): ByteArray = write { out ->
         out.writeInt(WearProtocol.VERSION)
@@ -204,6 +228,15 @@ sealed interface WatchCommand {
                 out.writeUTF("favorite")
                 out.writeUTF(favoriteId)
             }
+            SwitchToTv -> out.writeUTF("tv")
+            is SetNightMode -> {
+                out.writeUTF("nightMode")
+                out.writeBoolean(enabled)
+            }
+            is SetSpeechEnhancement -> {
+                out.writeUTF("speech")
+                out.writeBoolean(enabled)
+            }
         }
     }
 
@@ -223,6 +256,9 @@ sealed interface WatchCommand {
                 "sleep" -> SetSleepTimer(input.readInt().coerceIn(0, 24 * 60))
                 "move" -> MoveTo(input.readUTF())
                 "favorite" -> PlayFavorite(input.readUTF())
+                "tv" -> SwitchToTv
+                "nightMode" -> SetNightMode(input.readBoolean())
+                "speech" -> SetSpeechEnhancement(input.readBoolean())
                 else -> null
             }
         }

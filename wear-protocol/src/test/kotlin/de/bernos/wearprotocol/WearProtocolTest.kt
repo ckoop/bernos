@@ -26,6 +26,7 @@ class WearProtocolTest {
             favorites = listOf(WatchFavorite("FV:2/3", "STAR FM Maximum Rock Berlin")),
             sleepTimerMinutes = 25,
             headphones = WatchHeadphones("Sonos Ace", 64),
+            homeTheater = WatchHomeTheater(tvActive = true, nightMode = false, speechEnhancement = true),
         )
 
         val decoded = WatchState.decode(state.encode())
@@ -55,6 +56,9 @@ class WearProtocolTest {
             WatchCommand.SetSleepTimer(0),
             WatchCommand.MoveTo("RINCON_3"),
             WatchCommand.PlayFavorite("FV:2/3"),
+            WatchCommand.SwitchToTv,
+            WatchCommand.SetNightMode(true),
+            WatchCommand.SetSpeechEnhancement(false),
         )
         commands.forEach { assertEquals(it, WatchCommand.decode(it.encode())) }
     }

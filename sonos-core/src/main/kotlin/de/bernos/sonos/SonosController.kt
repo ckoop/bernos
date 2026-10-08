@@ -151,6 +151,30 @@ class SonosController(
         command { player.playFavorite(it.coordinator, favorite) }
     }
 
+    /**
+     * Schaltet die Soundbar der ausgewählten Gruppe auf den Fernseher. Spielt sie in einer Gruppe
+     * mit, deren Steuerung bei einem anderen Raum liegt, verlässt sie diese; die Auswahl folgt ihr.
+     */
+    fun switchToTv() {
+        val soundbar = _state.value.selectedGroup?.homeTheater ?: return
+        groupingCommand {
+            player.switchToTv(soundbar)
+            soundbar.uuid
+        }
+    }
+
+    fun setNightMode(enabled: Boolean) = setHomeTheaterEq(SonosPlayerClient.EQ_NIGHT_MODE, enabled) { copy(nightMode = enabled) }
+
+    fun setSpeechEnhancement(enabled: Boolean) =
+        setHomeTheaterEq(SonosPlayerClient.EQ_SPEECH_ENHANCEMENT, enabled) { copy(speechEnhancement = enabled) }
+
+    private fun setHomeTheaterEq(type: String, enabled: Boolean, optimistic: HomeTheaterState.() -> HomeTheaterState) {
+        val soundbar = _state.value.selectedGroup?.homeTheater ?: return
+        // Sofort anzeigen; die nächste Abfrage bestätigt den Wert.
+        _state.update { s -> s.copy(nowPlaying = s.nowPlaying?.let { it.copy(homeTheater = it.homeTheater?.optimistic()) }) }
+        command { player.setEq(soundbar, type, if (enabled) 1 else 0) }
+    }
+
     fun selectGroup(groupId: String?) {
         _state.update { it.copy(selectedGroupId = groupId, nowPlaying = null, error = null) }
         startTracking()
@@ -377,6 +401,19 @@ class SonosController(
         }
     }
 
+    /**
+     * Titel für die Anzeige. Bei Gruppen mit Soundbar wird zuerst geprüft, ob der Fernseher läuft;
+     * dessen Metadaten sind nichtssagend, angezeigt wird dann [TV_TITLE].
+     * @return Titel und ob der Fernseher läuft.
+     */
+    private suspend fun trackOf(group: ZoneGroup, track: TrackInfo?): Pair<TrackInfo?, Boolean> {
+        if (group.homeTheater != null) {
+            val uri = runCatching { player.currentUri(group.coordinator) }.getOrNull()
+            if (uri?.startsWith(SonosPlayerClient.TV_URI_PREFIX) == true) return TrackInfo(TV_TITLE, null, null, null) to true
+        }
+        return withSource(group.coordinator, track) to false
+    }
+
     /** Fehlt Album oder Cover (typisch bei Radio), helfen Name und Logo der Quelle aus. */
     private suspend fun withSource(coordinator: SonosDevice, track: TrackInfo?): TrackInfo? {
         if (track?.album != null && track.albumArtUrl != null) return track
@@ -397,7 +434,7 @@ class SonosController(
                 runCatching {
                     val coordinator = group.coordinator
                     val transport = player.transportState(coordinator)
-                    val track = withSource(coordinator, player.positionInfo(coordinator).track)
+                    val (track, _) = trackOf(group, player.positionInfo(coordinator).track)
                     group.id to GroupPlayback(transport, track)
                 }.getOrNull()
             }
@@ -439,8 +476,16 @@ class SonosController(
                 } else {
                     volume?.let { mapOf(coordinator.uuid to it) } ?: emptyMap()
                 }
-                val track = withSource(coordinator, position.track)
+                val (track, tvActive) = trackOf(group, position.track)
                 val sleepTimer = runCatching { player.sleepTimerRemaining(coordinator) }.getOrNull()
+                val homeTheater = group.homeTheater?.let { soundbar ->
+                    HomeTheaterState(
+                        deviceUuid = soundbar.uuid,
+                        tvActive = tvActive,
+                        nightMode = runCatching { player.eq(soundbar, SonosPlayerClient.EQ_NIGHT_MODE) }.getOrNull()?.let { it != 0 },
+                        speechEnhancement = runCatching { player.eq(soundbar, SonosPlayerClient.EQ_SPEECH_ENHANCEMENT) }.getOrNull()?.let { it != 0 },
+                    )
+                }
                 val nowPlaying = NowPlaying(
                     groupId = group.id,
                     transportState = transport,
@@ -452,6 +497,7 @@ class SonosController(
                     muted = muted,
                     memberVolumes = memberVolumes,
                     sleepTimerRemainingMs = sleepTimer,
+                    homeTheater = homeTheater,
                 )
                 _state.update {
                     // Die Übersicht gleich mitpflegen, damit die Raumliste zur Wiedergabe passt.
@@ -465,6 +511,8 @@ class SonosController(
     }
 
     companion object {
+        /** Anzeige, solange die Soundbar den Fernsehton spielt. */
+        const val TV_TITLE = "Fernseher"
         private const val GROUPING_RETRIES = 5
         private const val TOPOLOGY_SETTLE_MS = 1_500L
         private const val POLL_WITH_EVENTS_MS = 15_000L

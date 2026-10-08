@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
@@ -40,6 +41,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -57,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -70,6 +73,7 @@ import de.bernos.app.R
 import de.bernos.app.bluetooth.HeadphoneBattery
 import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
+import de.bernos.sonos.HomeTheaterState
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -93,6 +97,9 @@ interface BernosActions {
     fun moveTo(roomUuid: String)
     fun loadFavorites()
     fun playFavorite(favoriteId: String)
+    fun switchToTv()
+    fun setNightMode(enabled: Boolean)
+    fun setSpeechEnhancement(enabled: Boolean)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -333,6 +340,8 @@ private fun NowPlayingView(
         SleepTimerButton(nowPlaying?.sleepTimerRemainingMs, actions::setSleepTimer)
         Spacer(Modifier.height(16.dp))
 
+        nowPlaying?.homeTheater?.let { TvSection(it, actions) }
+
         FavoritesSection(favorites, actions::playFavorite)
 
         RoomsSection(group, allRooms, nowPlaying, actions)
@@ -380,6 +389,41 @@ private fun SleepTimerButton(remainingMs: Long?, onSet: (Int?) -> Unit) {
 }
 
 private val SLEEP_TIMER_MINUTES = listOf(15, 30, 45, 60, 90)
+
+/** Soundbar in der Gruppe: zurück zum Fernsehton, Nachtmodus und Sprachverbesserung. */
+@Composable
+private fun TvSection(homeTheater: HomeTheaterState, actions: BernosActions) {
+    Column(Modifier.fillMaxWidth()) {
+        SectionTitle(stringResource(R.string.tv))
+        FilledTonalButton(
+            onClick = actions::switchToTv,
+            enabled = !homeTheater.tvActive,
+            modifier = Modifier.testTag("tv-ton"),
+        ) {
+            Icon(painterResource(R.drawable.ic_tv), contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.tv_sound))
+        }
+        Text(
+            stringResource(if (homeTheater.tvActive) R.string.tv_active else R.string.tv_switch_hint),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp, bottom = 4.dp),
+        )
+        TvSwitch(R.string.night_mode, homeTheater.nightMode, "nachtmodus", actions::setNightMode)
+        TvSwitch(R.string.speech_enhancement, homeTheater.speechEnhancement, "sprachverbesserung", actions::setSpeechEnhancement)
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+/** Schalter; bei unbekanntem Wert (Abfrage fehlgeschlagen) ausgegraut. */
+@Composable
+private fun TvSwitch(label: Int, checked: Boolean?, tag: String, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(label), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Switch(checked = checked == true, onCheckedChange = onChange, enabled = checked != null, modifier = Modifier.testTag(tag))
+    }
+}
 
 /** Sonos-Favoriten als waagerechte Reihe; Verknüpfungen gehen nur in der Sonos-App und fehlen hier. */
 @Composable

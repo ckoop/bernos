@@ -6,7 +6,9 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -15,6 +17,7 @@ import de.bernos.app.bluetooth.HeadphoneBattery
 import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
 import de.bernos.sonos.GroupPlayback
+import de.bernos.sonos.HomeTheaterState
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -61,6 +64,9 @@ class BernosScreenTest {
         override fun moveTo(roomUuid: String) { calls += "move:$roomUuid" }
         override fun loadFavorites() { calls += "loadFavorites" }
         override fun playFavorite(favoriteId: String) { calls += "favorite:$favoriteId" }
+        override fun switchToTv() { calls += "tv" }
+        override fun setNightMode(enabled: Boolean) { calls += "night:$enabled" }
+        override fun setSpeechEnhancement(enabled: Boolean) { calls += "speech:$enabled" }
     }
 
     private fun show(state: SonosState): RecordingActions {
@@ -219,5 +225,38 @@ class BernosScreenTest {
         compose.onNodeWithText("Schlaftimer aus").performClick()
 
         assertEquals(listOf("loadFavorites", "sleep:null"), actions.calls)
+    }
+
+    @Test
+    fun soundbar_tv_ton_nachtmodus_und_sprachverbesserung() {
+        val homeTheater = HomeTheaterState("RINCON_3", tvActive = false, nightMode = false, speechEnhancement = true)
+        val nowPlaying = NowPlaying("G2", TransportState.PLAYING, null, null, null, 0, 40, false, homeTheater = homeTheater)
+        val actions = show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = nowPlaying))
+
+        compose.onNodeWithText("Beendet die Musik in diesem Raum").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("nachtmodus").performScrollTo().performClick()
+        compose.onNodeWithTag("sprachverbesserung").performScrollTo().performClick()
+        compose.onNodeWithTag("tv-ton").performScrollTo().performClick()
+
+        assertEquals(listOf("loadFavorites", "night:true", "speech:false", "tv"), actions.calls)
+    }
+
+    @Test
+    fun laufender_fernseher_sperrt_den_tv_knopf() {
+        val homeTheater = HomeTheaterState("RINCON_3", tvActive = true, nightMode = true, speechEnhancement = false)
+        val tv = TrackInfo("Fernseher", null, null, null)
+        val nowPlaying = NowPlaying("G2", TransportState.PLAYING, tv, null, null, 0, 40, false, homeTheater = homeTheater)
+        show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = nowPlaying))
+
+        compose.onNodeWithTag("tv-ton").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Fernsehton läuft").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun ohne_soundbar_kein_tv_bereich() {
+        val nowPlaying = NowPlaying("G2", TransportState.PLAYING, null, null, null, 0, 40, false)
+        show(SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = nowPlaying))
+
+        compose.onNodeWithTag("tv-ton").assertDoesNotExist()
     }
 }

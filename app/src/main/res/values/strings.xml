@@ -27,6 +27,12 @@
     <string name="move_here">Hierher</string>
     <string name="speakers_count" tools:ignore="PluralsCandidate">%1$d Lautsprecher</string>
     <string name="favorites">Favoriten</string>
+    <string name="tv">Fernseher</string>
+    <string name="tv_sound">TV-Ton</string>
+    <string name="tv_active">Fernsehton läuft</string>
+    <string name="tv_switch_hint">Beendet die Musik in diesem Raum</string>
+    <string name="night_mode">Nachtmodus</string>
+    <string name="speech_enhancement">Sprachverbesserung</string>
     <string name="sleep_timer">Schlaftimer</string>
     <string name="sleep_timer_remaining" tools:ignore="PluralsCandidate">Aus in %1$d Min.</string>
     <string name="sleep_timer_off">Schlaftimer aus</string>

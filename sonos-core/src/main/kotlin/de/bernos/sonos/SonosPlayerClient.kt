@@ -42,6 +42,24 @@ class SonosPlayerClient(private val soap: SoapClient) {
     suspend fun sourceInfo(device: SonosDevice): SourceInfo? =
         Parsers.parseSourceInfo(avTransport(device, "GetMediaInfo")["CurrentURIMetaData"], device.baseUrl)
 
+    /** Adresse der gewählten Quelle, z. B. `x-sonos-htastream:…` beim Fernseher. */
+    suspend fun currentUri(device: SonosDevice): String? = avTransport(device, "GetMediaInfo")["CurrentURI"]
+
+    /** Schaltet die Soundbar auf den Fernseher; laufende Musik der Gruppe endet dabei. */
+    suspend fun switchToTv(soundbar: SonosDevice) {
+        avTransport(soundbar, "SetAVTransportURI", "CurrentURI" to "$TV_URI_PREFIX${soundbar.uuid}:spdif", "CurrentURIMetaData" to "")
+        // Der TV-Ton läuft meist von selbst an; manche Fernseher brauchen den Anstoß.
+        runCatching { play(soundbar) }
+    }
+
+    /** Klangeinstellung einer Soundbar, z. B. [EQ_NIGHT_MODE]; `null`, wenn sie fehlt. */
+    suspend fun eq(device: SonosDevice, type: String): Int? =
+        rendering(device, "GetEQ", "EQType" to type)["CurrentValue"]?.toIntOrNull()
+
+    suspend fun setEq(device: SonosDevice, type: String, value: Int) {
+        rendering(device, "SetEQ", "EQType" to type, "DesiredValue" to value.toString())
+    }
+
     /** Lautstärke der ganzen Gruppe (0–100). Muss am Koordinator abgefragt werden. */
     suspend fun groupVolume(coordinator: SonosDevice): Int? =
         groupRendering(coordinator, "GetGroupVolume")["CurrentVolume"]?.toIntOrNull()
@@ -165,5 +183,9 @@ class SonosPlayerClient(private val soap: SoapClient) {
 
     companion object {
         const val ERROR_TRANSITION_NOT_AVAILABLE = 701
+        const val TV_URI_PREFIX = "x-sonos-htastream:"
+        const val EQ_NIGHT_MODE = "NightMode"
+        /** Sprachverbesserung; so heißt sie bei Beam, Arc und Ray. */
+        const val EQ_SPEECH_ENHANCEMENT = "DialogLevel"
     }
 }

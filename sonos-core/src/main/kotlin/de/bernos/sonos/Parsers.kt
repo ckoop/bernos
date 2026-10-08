@@ -108,6 +108,13 @@ internal object Parsers {
     }
 
     /**
+     * Soundbars erkennt man am HDMI-Anschluss (`HdmiCecAvailable`, Beam/Arc/Ray) oder daran, dass
+     * sie in einem Heimkino-Verbund die Front-Kanäle stellen (`HTSatChanMapSet` mit `<UUID>:LF,RF`).
+     */
+    private fun isHomeTheater(uuid: String, hdmiCec: String, satelliteMap: String): Boolean =
+        hdmiCec == "1" || satelliteMap.split(';').any { it == "$uuid:LF,RF" }
+
+    /**
      * Wertet den von `GetZoneGroupState` gelieferten `ZoneGroupState` aus.
      * Unsichtbare Mitglieder (Surround-Lautsprecher, Sub, gekoppelte Stereo-Partner)
      * und Bridges/Boosts werden ausgelassen.
@@ -122,11 +129,13 @@ internal object Parsers {
                 .mapNotNull { member ->
                     val location = runCatching { URI(member.getAttribute("Location")) }.getOrNull()
                     val host = location?.host ?: return@mapNotNull null
+                    val uuid = member.getAttribute("UUID")
                     SonosDevice(
-                        uuid = member.getAttribute("UUID"),
+                        uuid = uuid,
                         roomName = member.getAttribute("ZoneName"),
                         host = host,
                         port = location.port.takeIf { it > 0 } ?: SonosDevice.DEFAULT_PORT,
+                        isHomeTheater = isHomeTheater(uuid, member.getAttribute("HdmiCecAvailable"), member.getAttribute("HTSatChanMapSet")),
                     )
                 }
             val coordinator = members.firstOrNull { it.uuid == coordinatorUuid } ?: return@mapNotNull null

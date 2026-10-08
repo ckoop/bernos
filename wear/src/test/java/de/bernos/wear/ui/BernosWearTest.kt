@@ -24,6 +24,7 @@ import de.bernos.wear.PhoneConnection
 import de.bernos.wearprotocol.WatchFavorite
 import de.bernos.wearprotocol.WatchGroup
 import de.bernos.wearprotocol.WatchHeadphones
+import de.bernos.wearprotocol.WatchHomeTheater
 import de.bernos.wearprotocol.WatchRoom
 import de.bernos.wearprotocol.WatchState
 import org.junit.Assert.assertEquals
@@ -57,6 +58,9 @@ class BernosWearTest {
         override fun setSleepTimer(minutes: Int) { calls += "sleep:$minutes" }
         override fun moveTo(roomUuid: String) { calls += "move:$roomUuid" }
         override fun playFavorite(favoriteId: String) { calls += "favorite:$favoriteId" }
+        override fun switchToTv() { calls += "tv" }
+        override fun setNightMode(enabled: Boolean) { calls += "night:$enabled" }
+        override fun setSpeechEnhancement(enabled: Boolean) { calls += "speech:$enabled" }
         override fun refresh() { calls += "refresh" }
         override fun reconnect() { calls += "reconnect" }
     }
@@ -292,6 +296,41 @@ class BernosWearTest {
 
         assertEquals(listOf("sleep:30"), actions.calls)
         compose.onNodeWithText("Song").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Soundbar - TV-Ton und Schalter ueber die Raumliste`() {
+        val actions = RecordingActions()
+        val state = WatchState(
+            groups = groups,
+            selectedGroupId = "G1",
+            title = "Song",
+            isPlaying = true,
+            volume = 30,
+            homeTheater = WatchHomeTheater(tvActive = false, nightMode = false, speechEnhancement = true),
+        )
+        compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, actions) }
+
+        compose.onNodeWithTag("raum").performClick()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("nachtmodus"))
+        compose.onNodeWithTag("nachtmodus").performClick()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("sprachverbesserung"))
+        compose.onNodeWithTag("sprachverbesserung").performClick()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("tv-ton"))
+        compose.onNodeWithTag("tv-ton").performClick()
+
+        assertEquals(listOf("night:true", "speech:false", "tv"), actions.calls)
+        // Zurück zur Wiedergabe.
+        compose.onNodeWithText("Song").assertIsDisplayed()
+    }
+
+    @Test
+    fun `ohne Soundbar kein TV-Bereich`() {
+        val state = WatchState(groups = groups, selectedGroupId = "G1", title = "Song", isPlaying = true, volume = 30)
+        compose.setContent { BernosWear(state, null, PhoneConnection.CONNECTED, RecordingActions()) }
+
+        compose.onNodeWithTag("raum").performClick()
+        compose.onNodeWithTag("tv-ton").assertDoesNotExist()
     }
 
     @Test
