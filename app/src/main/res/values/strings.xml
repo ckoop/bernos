@@ -34,6 +34,10 @@
     <string name="minutes">%1$d Minuten</string>
     <string name="battery_level">Akku %1$d %%</string>
     <string name="battery_charging">Lädt · %1$d %%</string>
+    <string name="low_battery_channel">Kopfhörer-Akku</string>
+    <string name="low_battery_channel_description">Warnung, wenn der Akku der Sonos Ace unter 15 % fällt</string>
+    <string name="low_battery_title">%1$s: Akku fast leer</string>
+    <string name="low_battery_text">Noch %1$d %% – bald aufladen</string>
     <string name="headphones_bluetooth">Kopfhörer · per Bluetooth verbunden</string>
     <plurals name="favorite_shortcuts">
         <item quantity="one">%1$d Verknüpfung lässt sich nur in der Sonos-App öffnen.</item>

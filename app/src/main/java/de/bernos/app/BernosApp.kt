@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.wifi.WifiManager
 import android.util.Log
 import de.bernos.app.bluetooth.HeadphoneMonitor
+import de.bernos.app.bluetooth.LowBatteryNotifier
 import de.bernos.app.wear.WearBridge
 import de.bernos.sonos.SonosController
 import de.bernos.sonos.SsdpDiscovery
@@ -33,6 +34,7 @@ class BernosApp : Application() {
             controller.addHost(host)
         }
         headphones = HeadphoneMonitor(this).apply { start() }
+        LowBatteryNotifier(this).start(headphones.battery, scope)
         WearBridge(this, controller, headphones.battery, scope).start()
     }
 

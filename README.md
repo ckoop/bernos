@@ -15,6 +15,7 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy
   **Akkustand** tragbarer Lautsprecher (z. B. Sonos Roam).
 - **Akkustand der Sonos Ace**, solange die Kopfhörer per Bluetooth mit dem Handy verbunden sind
   (braucht die Berechtigung „Geräte in der Nähe“; erkannt am Namen „Sonos“ bzw. „Ace“).
+  Fällt er unter 15 %, kommt eine Benachrichtigung (auch auf der Uhr) – solange Bernos im Hintergrund läuft.
 - **Räume gruppieren:** weitere Räume dazunehmen oder herausnehmen, Lautstärke pro Raum.
 - **Musik verschieben:** die laufende Musik mit einem Tipp in einen anderen Raum schicken.
 - Zeigt für den gewählten Raum Titel, Künstler, Album und **Albumcover** an, inkl. Fortschritt.

@@ -159,6 +159,8 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
    Reflexion (`getBatteryLevel`) und `BATTERY_LEVEL_CHANGED`, nur solange die Ace mit dem Handy
    verbunden ist (Nutzer sah die Prozentzahl in den Bluetooth-Einstellungen). Berechtigung
    `BLUETOOTH_CONNECT`; Protokoll Version 6 (`headphones`). Log: `adb logcat -s BernosAce`.
+   Warnung bei < 15 % (0.4.12, ungeprüft): `LowBatteryAlert` (einmal, erneut erst nach ≥ 20 %),
+   `LowBatteryNotifier` (Kanal `headphone_battery`); greift nur, solange der App-Prozess lebt.
 3. **Ideen (vom Nutzer gesammelt, noch nicht beauftragt)**:
    - TV-Ton umschalten (Soundbar zurück auf den TV-Eingang, `x-sonos-htastream:`), dazu Nachtmodus
      und Sprachverbesserung – falls im Wohnzimmer eine Soundbar steht.

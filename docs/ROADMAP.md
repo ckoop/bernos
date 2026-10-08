@@ -52,6 +52,7 @@ WLAN-Lautsprecher, sondern per Bluetooth mit dem Handy verbunden. Mögliche Wege
 3. Bluetooth-Protokoll der Ace analysieren – aufwendig, kann jederzeit brechen.
 
 Erledigt (0.4.11): Akkustand der Ace auf Handy und Uhr, solange sie mit dem Handy verbunden ist.
+Erledigt (0.4.12): Benachrichtigung, wenn ihr Akku unter 15 % fällt.
 Android kennt ihn über das Freisprechprofil (wie in den Bluetooth-Einstellungen); gelesen über
 `BluetoothDevice.getBatteryLevel()` und die Meldung `BATTERY_LEVEL_CHANGED`, beides nicht offiziell
 freigegeben. Ohne Verbindung zum Handy ginge es nur über das eigene Protokoll von Sonos.
