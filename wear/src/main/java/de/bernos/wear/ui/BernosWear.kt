@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -327,7 +328,7 @@ private fun SleepTimerList(state: WatchState, onSet: (Int) -> Unit) {
                     onClick = { onSet(minutes) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.filledTonalButtonColors(),
-                    label = { Text(stringResource(R.string.minutes, minutes)) },
+                    label = { Text(pluralStringResource(R.plurals.minutes, minutes, minutes)) },
                 )
             }
             if (state.sleepTimerMinutes != null) {

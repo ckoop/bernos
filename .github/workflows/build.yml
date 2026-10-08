@@ -28,12 +28,17 @@ jobs:
       - name: Wear-OS-App bauen und Oberflaeche testen
         run: ./gradlew :wear:assembleDebug :wear:testDebugUnitTest
 
+      - name: Lint (Handy und Uhr)
+        run: ./gradlew :app:lintDebug :wear:lintDebug
+
       - name: Testberichte bereitstellen
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: testberichte
-          path: '**/build/reports/tests/'
+          path: |
+            **/build/reports/tests/
+            **/build/reports/lint-results-debug.html
 
       - name: APK bereitstellen
         uses: actions/upload-artifact@v4

@@ -12,9 +12,9 @@ App sind auf Deutsch. Bezeichner im Code bleiben Englisch.
 - **Direkt auf `main` committen und pushen**, keine Feature-Branches, keine Pull Requests
   (ausdrücklicher Wunsch des Nutzers).
 - Vor jedem Push lokal prüfen:
-  `./gradlew :sonos-core:test :wear-protocol:test :app:testDebugUnitTest :app:assembleDebug :wear:testDebugUnitTest :wear:assembleDebug`.
+  `./gradlew :sonos-core:test :wear-protocol:test :app:testDebugUnitTest :app:assembleDebug :wear:testDebugUnitTest :wear:assembleDebug :app:lintDebug :wear:lintDebug`.
   Lokal liegt kein JDK im PATH: `JAVA_HOME=~/Android/jdk-21` setzen (kompiliert für Java 17).
-- GitHub Actions (`.github/workflows/build.yml`) baut bei jedem Push, führt alle Tests aus und
+- GitHub Actions (`.github/workflows/build.yml`) baut bei jedem Push, führt alle Tests und Lint aus und
   stellt die APKs als Artefakte `bernos-debug-apk` (Handy) und `bernos-wear-debug-apk` (Uhr) bereit. Ein roter Build ist sofort zu beheben.
 - Am Ende einer Phase `README.md` und `docs/ROADMAP.md` aktualisieren.
 - Ehrlich berichten, was getestet ist: automatische Tests ≠ Test an echten Lautsprechern.
@@ -177,7 +177,8 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
    - Release-Signatur einrichten (Release nutzt derzeit den Debug-Schlüssel).
    - Ab Android 17 (API 37) prüfen, ob eine Berechtigung für das lokale Netz nötig ist.
    - Raumlautstärke wird nur per Polling aktualisiert (keine RenderingControl-Abos pro Mitglied).
-   - Lint ist nicht Teil der CI; bei Gelegenheit `:app:lintDebug` aufnehmen und Befunde beheben.
+   - Lint-Warnungen offen (Fehler brechen die CI ab): targetSdk 37, `PrimaryLayout` ohne
+     `setResponsiveContentInsetEnabled` (Kachel), `WearRecents` in der Komplikation – an der Uhr prüfen.
    - Uhr: ungeprüft, ob sich Kachel/Komplikation bei geschlossener Uhr-App aktualisieren, wenn
      sich in der Sonos-App etwas ändert (StateListenerService). Die Handy-App fragt ohne
      Herzschlag der Uhr nur, solange ihr Prozess lebt bzw. der PlaybackService läuft.

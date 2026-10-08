@@ -59,6 +59,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    // androidx.media zieht Fragment 1.1 mit; Activity-Result-APIs brauchen mindestens 1.3.
+    implementation(libs.androidx.fragment)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.media)
     implementation(libs.play.services.wearable)

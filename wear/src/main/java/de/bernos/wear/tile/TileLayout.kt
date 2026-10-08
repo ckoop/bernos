@@ -10,7 +10,6 @@ import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.material.Button
 import androidx.wear.protolayout.material.ButtonDefaults
-import androidx.wear.protolayout.material.Colors
 import androidx.wear.protolayout.material.CompactChip
 import androidx.wear.protolayout.material.Text
 import androidx.wear.protolayout.material.Typography
@@ -35,9 +34,10 @@ object TileLayout {
 
     // Ohne ausdrückliche Farbe zeichnet protolayout-material Text in ON_PRIMARY (dunkelgrau),
     // gedacht für helle Knöpfe – auf dem schwarzen Kachelhintergrund kaum lesbar.
-    private val TITLE_COLOR = argb(Colors.ON_SURFACE)
+    // Werte wie Colors.ON_SURFACE/PRIMARY aus protolayout-material (dort nur intern zugänglich).
+    private val TITLE_COLOR = argb(0xFFFFFFFF.toInt())
     private val SUBTITLE_COLOR = argb(0xFFBDC1C6.toInt())
-    private val ROOM_COLOR = argb(Colors.PRIMARY)
+    private val ROOM_COLOR = argb(0xFFAECBFA.toInt())
     private const val COVER_SCRIM = 0xB3000000.toInt()
 
     fun build(

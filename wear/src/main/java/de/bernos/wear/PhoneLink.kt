@@ -3,6 +3,7 @@ package de.bernos.wear
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.core.graphics.scale
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -163,7 +164,7 @@ class PhoneLink(context: Context, private val scope: CoroutineScope) {
 
     /** Kacheln zeigen eingebettete Bilder am sichersten unkomprimiert; klein halten. */
     private fun toTileImage(source: Bitmap, url: String?): TileImage {
-        val scaled = Bitmap.createScaledBitmap(source, TILE_COVER_PX, TILE_COVER_PX, true)
+        val scaled = source.scale(TILE_COVER_PX, TILE_COVER_PX)
         val rgb565 = scaled.copy(Bitmap.Config.RGB_565, false)
         val buffer = ByteBuffer.allocate(rgb565.byteCount)
         rgb565.copyPixelsToBuffer(buffer)

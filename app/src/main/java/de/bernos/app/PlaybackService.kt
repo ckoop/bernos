@@ -261,7 +261,6 @@ class PlaybackService : Service() {
     )
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(CHANNEL_ID, getString(R.string.notification_channel), NotificationManager.IMPORTANCE_LOW)
             .apply {
                 description = getString(R.string.notification_channel_description)

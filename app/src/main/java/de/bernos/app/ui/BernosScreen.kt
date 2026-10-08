@@ -359,7 +359,7 @@ private fun SleepTimerButton(remainingMs: Long?, onSet: (Int?) -> Unit) {
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             SLEEP_TIMER_MINUTES.forEach { minutes ->
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.minutes, minutes)) },
+                    text = { Text(pluralStringResource(R.plurals.minutes, minutes, minutes)) },
                     onClick = {
                         expanded = false
                         onSet(minutes)

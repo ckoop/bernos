@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Bernos</string>
-    <string name="rooms">Räume</string>
     <string name="refresh">Erneut suchen</string>
     <string name="back">Zurück</string>
     <string name="searching">Suche Sonos-Lautsprecher …</string>
@@ -26,16 +25,19 @@
     <string name="add_room">Dazu</string>
     <string name="remove_room">Entfernen</string>
     <string name="move_here">Hierher</string>
-    <string name="speakers_count">%1$d Lautsprecher</string>
+    <string name="speakers_count" tools:ignore="PluralsCandidate">%1$d Lautsprecher</string>
     <string name="favorites">Favoriten</string>
     <string name="sleep_timer">Schlaftimer</string>
-    <string name="sleep_timer_remaining">Aus in %1$d Min.</string>
+    <string name="sleep_timer_remaining" tools:ignore="PluralsCandidate">Aus in %1$d Min.</string>
     <string name="sleep_timer_off">Schlaftimer aus</string>
-    <string name="minutes">%1$d Minuten</string>
+    <plurals name="minutes">
+        <item quantity="one">%1$d Minute</item>
+        <item quantity="other">%1$d Minuten</item>
+    </plurals>
     <string name="battery_level">Akku %1$d %%</string>
     <string name="battery_charging">Lädt · %1$d %%</string>
     <string name="low_battery_channel">Kopfhörer-Akku</string>
-    <string name="low_battery_channel_description">Warnung, wenn der Akku der Sonos Ace unter 15 % fällt</string>
+    <string name="low_battery_channel_description" formatted="false">Warnung, wenn der Akku der Sonos Ace unter 15 % fällt</string>
     <string name="low_battery_title">%1$s: Akku fast leer</string>
     <string name="low_battery_text">Noch %1$d %% – bald aufladen</string>
     <string name="headphones_bluetooth">Kopfhörer · per Bluetooth verbunden</string>

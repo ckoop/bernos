@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Bernos</string>
     <string name="rooms">Räume</string>
     <string name="search_again">Neu suchen</string>
@@ -31,9 +31,12 @@
     <string name="no_favorites">Keine abspielbaren Favoriten. Favoriten legst du in der Sonos-App an.</string>
     <string name="sleep_timer">Schlaftimer</string>
     <string name="sleep_timer_off_state">Aus</string>
-    <string name="sleep_timer_remaining">Aus in %1$d Min.</string>
+    <string name="sleep_timer_remaining" tools:ignore="PluralsCandidate">Aus in %1$d Min.</string>
     <string name="sleep_timer_turn_off">Ausschalten</string>
-    <string name="minutes">%1$d Minuten</string>
+    <plurals name="minutes">
+        <item quantity="one">%1$d Minute</item>
+        <item quantity="other">%1$d Minuten</item>
+    </plurals>
     <string name="battery_level">Akku %1$d %%</string>
     <string name="battery_charging">Lädt %1$d %%</string>
     <string name="headphones_battery">%1$s · Akku %2$d %%</string>
