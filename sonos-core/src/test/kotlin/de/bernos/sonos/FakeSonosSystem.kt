@@ -10,13 +10,9 @@ import java.io.Closeable
  * Simuliert ein Sonos-System im Test: Jeder Raum ist ein eigener HTTP-Server, der die
  * wichtigsten SOAP-Aktionen beantwortet und Gruppen, Lautstärke und Wiedergabe nachbildet.
  */
-class FakeSonosSystem(
-    roomNames: List<String>,
-    /** Räume mit Soundbar (wie die Beam): TV-Eingang, Nachtmodus, Sprachverbesserung. */
-    homeTheaterRooms: Set<String> = emptySet(),
-) : Closeable {
+class FakeSonosSystem(roomNames: List<String>) : Closeable {
 
-    inner class Speaker(val uuid: String, val roomName: String, val homeTheater: Boolean) {
+    inner class Speaker(val uuid: String, val roomName: String) {
         val server = MockWebServer()
         @Volatile var coordinatorUuid: String = uuid
         @Volatile var volume: Int = 20
@@ -30,10 +26,6 @@ class FakeSonosSystem(
         /** Radiosender wie bei TuneIn: Logo nur in den Metadaten der Quelle, nicht beim Titel. */
         @Volatile var radio: Radio? = null
         val queue: MutableList<String> = mutableListOf()
-        /** Gewählte Quelle wie bei `GetMediaInfo`, z. B. `x-sonos-htastream:…` beim Fernseher. */
-        @Volatile var currentUri: String = ""
-        @Volatile var nightMode: Int = 0
-        @Volatile var dialogLevel: Int = 0
 
         val address: String get() = "${server.hostName}:${server.port}"
     }
@@ -45,7 +37,7 @@ class FakeSonosSystem(
 
     @Volatile var favorites: List<FakeFavorite> = emptyList()
 
-    val speakers: List<Speaker> = roomNames.mapIndexed { i, name -> Speaker("RINCON_${i}00", name, name in homeTheaterRooms) }
+    val speakers: List<Speaker> = roomNames.mapIndexed { i, name -> Speaker("RINCON_${i}00", name) }
     private var topologyVersion = 1
     private val lock = Any()
 
@@ -93,20 +85,7 @@ class FakeSonosSystem(
             "AddURIToQueue" -> emptyList<Pair<String, String>>().also {
                 coordinator.queue += titleOf(args["EnqueuedURIMetaData"]) ?: args.getValue("EnqueuedURI")
             }
-            "GetMediaInfo" -> listOf(
-                "CurrentURI" to coordinator.currentUri,
-                "CurrentURIMetaData" to (coordinator.radio?.let { radioSourceDidl(it) } ?: ""),
-            )
-            "GetEQ" -> {
-                if (!speaker.homeTheater) return fault(402)
-                listOf("CurrentValue" to (if (args["EQType"] == "NightMode") speaker.nightMode else speaker.dialogLevel).toString())
-            }
-            "SetEQ" -> {
-                if (!speaker.homeTheater) return fault(402)
-                val value = args.getValue("DesiredValue").toInt()
-                if (args["EQType"] == "NightMode") speaker.nightMode = value else speaker.dialogLevel = value
-                emptyList()
-            }
+            "GetMediaInfo" -> listOf("CurrentURIMetaData" to (coordinator.radio?.let { radioSourceDidl(it) } ?: ""))
             "Play" -> emptyList<Pair<String, String>>().also { coordinator.transport = "PLAYING" }
             "Pause" -> emptyList<Pair<String, String>>().also { coordinator.transport = "PAUSED_PLAYBACK" }
             "Next", "Previous" -> emptyList()
@@ -123,17 +102,7 @@ class FakeSonosSystem(
             }
             "SetAVTransportURI" -> {
                 val uri = args.getValue("CurrentURI")
-                speaker.currentUri = uri
-                if (uri.startsWith("x-sonos-htastream:")) {
-                    if (!speaker.homeTheater || !uri.contains(speaker.uuid)) return fault(714)
-                    // Wie bei Sonos: Die Soundbar verlässt ihre Gruppe und spielt den Fernseher.
-                    speaker.radio = null
-                    speaker.title = null
-                    if (speaker.coordinatorUuid != speaker.uuid) {
-                        speaker.coordinatorUuid = speaker.uuid
-                        topologyVersion++
-                    }
-                } else if (uri.startsWith("x-rincon-queue:")) {
+                if (uri.startsWith("x-rincon-queue:")) {
                     speaker.radio = null
                     speaker.title = speaker.queue.firstOrNull()
                 } else if (!uri.startsWith("x-rincon:")) {
@@ -181,8 +150,7 @@ class FakeSonosSystem(
             for (member in speakers.filter { it.coordinatorUuid == coordinator.uuid }) {
                 append(
                     "<ZoneGroupMember UUID=\"${member.uuid}\" " +
-                        "Location=\"http://${member.address}/xml/device_description.xml\" ZoneName=\"${member.roomName}\" " +
-                        "HdmiCecAvailable=\"${if (member.homeTheater) 1 else 0}\"/>",
+                        "Location=\"http://${member.address}/xml/device_description.xml\" ZoneName=\"${member.roomName}\"/>",
                 )
             }
             append("</ZoneGroup>")

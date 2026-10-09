@@ -4,7 +4,6 @@ import de.bernos.app.bluetooth.HeadphoneBattery
 import de.bernos.sonos.BatteryStatus
 import de.bernos.sonos.Favorite
 import de.bernos.sonos.GroupPlayback
-import de.bernos.sonos.HomeTheaterState
 import de.bernos.sonos.NowPlaying
 import de.bernos.sonos.SonosDevice
 import de.bernos.sonos.SonosState
@@ -118,16 +117,5 @@ class WatchStateMapperTest {
         assertEquals("Sonos Ace", watch.headphones?.name)
         assertEquals(64, watch.headphones?.batteryLevel)
         assertNull(SonosState(groups = groups).toWatchState().headphones)
-    }
-
-    @Test
-    fun `Soundbar-Funktionen gehen an die Uhr, unbekannte Werte als aus`() {
-        val homeTheater = HomeTheaterState("RINCON_1", tvActive = true, nightMode = null, speechEnhancement = true)
-        val nowPlaying = NowPlaying("G1", TransportState.PLAYING, null, null, null, 0, 20, false, homeTheater = homeTheater)
-        val watch = SonosState(groups = groups, selectedGroupId = "G1", nowPlaying = nowPlaying).toWatchState()
-        assertEquals(de.bernos.wearprotocol.WatchHomeTheater(tvActive = true, nightMode = false, speechEnhancement = true), watch.homeTheater)
-
-        val ohne = SonosState(groups = groups, selectedGroupId = "G2", nowPlaying = nowPlaying.copy(groupId = "G2", homeTheater = null))
-        assertNull(ohne.toWatchState().homeTheater)
     }
 }

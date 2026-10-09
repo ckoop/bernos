@@ -21,8 +21,6 @@ An echten Sonos-Lautsprechern erfolgreich getestet (Handy mit Android 16, Galaxy
 - Zeigt für den gewählten Raum Titel, Künstler, Album und **Albumcover** an, inkl. Fortschritt.
 - Abspielen/Pause, nächster/vorheriger Titel, Lautstärke der Gruppe, **Stummschalten**,
   **Schlaftimer** (15 bis 90 Minuten).
-- **Soundbar am Fernseher** (Beam, Arc, Ray): mit einem Tipp zurück zum **TV-Ton**, dazu
-  **Nachtmodus** und **Sprachverbesserung** als Schalter. Läuft der Fernseher, zeigt Bernos „Fernseher“.
 - **Sonos-Favoriten** ("Meine Sonos") mit Cover direkt abspielen: Radiosender sowie
   Playlists und Alben, z. B. von Spotify. Verknüpfungen (etwa Bereiche von Sonos Radio)
   gehen nur in der Sonos-App; Bernos weist darauf hin.
@@ -38,8 +36,7 @@ Eigene Uhr-App, die über das Handy steuert (das Handy muss Bernos installiert h
 Nähe sein; es spricht mit Sonos, die Uhr nur mit dem Handy):
 
 - **Raumliste:** Raum zum Steuern wählen, mit laufendem Titel und Akkustand (auch der Sonos Ace,
-  wenn sie mit dem Handy verbunden ist); dort auch der **Schlaftimer** und bei einer Soundbar
-  **TV-Ton**, **Nachtmodus** und **Sprachverbesserung**.
+  wenn sie mit dem Handy verbunden ist); dort auch der **Schlaftimer**.
 - **Musik hierher verschieben:** laufende Musik in einen anderen Raum schicken.
 - **Wiedergabe:** Cover bzw. Senderlogo als Hintergrund, Titel, Künstler,
   Zurück/Abspielen/Weiter, **Lautstärke über die Lünette** bzw. Drehkrone, **Stummschalten**

@@ -179,33 +179,4 @@ class ParsersTest {
         assertEquals("192.168.1.20", wohnzimmer.coordinator.host)
         assertEquals(listOf("RINCON_A", "RINCON_B"), wohnzimmer.members.map { it.uuid })
     }
-
-    @Test
-    fun `Soundbar - Beam mit Surround erkannt, Roam nicht`() {
-        // Gekürzt aus dem echten ZoneGroupState (Beam mit zwei Play:1 als Rücklautsprecher, Oktober 2026).
-        val state = """
-            <ZoneGroupState><ZoneGroups>
-              <ZoneGroup Coordinator="RINCON_BEAM" ID="RINCON_BEAM:1">
-                <ZoneGroupMember UUID="RINCON_BEAM" Location="http://192.168.1.72:1400/xml/device_description.xml" ZoneName="Wohnzimmer"
-                  HTSatChanMapSet="RINCON_BEAM:LF,RF;RINCON_L:LR;RINCON_R:RR" HdmiCecAvailable="1">
-                  <Satellite UUID="RINCON_L" Location="http://192.168.1.61:1400/xml/device_description.xml" ZoneName="Wohnzimmer"
-                    Invisible="1" HTSatChanMapSet="RINCON_BEAM:LF,RF;RINCON_L:LR" HdmiCecAvailable="0"/>
-                </ZoneGroupMember>
-              </ZoneGroup>
-              <ZoneGroup Coordinator="RINCON_ROAM" ID="RINCON_ROAM:2">
-                <ZoneGroupMember UUID="RINCON_ROAM" Location="http://192.168.1.20:1400/xml/device_description.xml" ZoneName="Sonos Roam"
-                  HdmiCecAvailable="0"/>
-              </ZoneGroup>
-              <ZoneGroup Coordinator="RINCON_BAR" ID="RINCON_BAR:3">
-                <ZoneGroupMember UUID="RINCON_BAR" Location="http://192.168.1.30:1400/xml/device_description.xml" ZoneName="Keller"
-                  HTSatChanMapSet="RINCON_BAR:LF,RF;RINCON_SUB:SW"/>
-              </ZoneGroup>
-            </ZoneGroups></ZoneGroupState>
-        """.trimIndent()
-        val rooms = Parsers.parseZoneGroups(state).associateBy { it.coordinator.roomName }
-        assertEquals("RINCON_BEAM", rooms.getValue("Wohnzimmer").homeTheater?.uuid)
-        assertNull(rooms.getValue("Sonos Roam").homeTheater)
-        // Ältere Soundbar ohne HDMI (Playbar) mit Sub: an den Front-Kanälen erkannt.
-        assertEquals("RINCON_BAR", rooms.getValue("Keller").homeTheater?.uuid)
-    }
 }

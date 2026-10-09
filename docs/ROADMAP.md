@@ -38,14 +38,6 @@ Mediensitzung (damit funktioniert bereits die eingebaute Mediensteuerung von Wea
 - An echten Geräten getestet (07.10.2026): Radiosender (TuneIn) und Spotify-Playlist als
   Favorit, auf Handy und Uhr.
 
-## Soundbar am Fernseher ✅ (0.4.14)
-- Soundbar erkannt an `HdmiCecAvailable="1"` bzw. den Front-Kanälen in `HTSatChanMapSet`.
-- TV-Ton: `SetAVTransportURI` mit `x-sonos-htastream:<UUID>:spdif`; spielt die Soundbar in einer
-  fremden Gruppe mit, verlässt sie diese, und die Auswahl folgt ihr.
-- Nachtmodus (`NightMode`) und Sprachverbesserung (`DialogLevel`) über `GetEQ`/`SetEQ`.
-- Handy: Bereich „Fernseher“ in der Wiedergabe; Uhr: in der Raumliste unter „Raum steuern“.
-- Lesen an der echten Beam geprüft (08.10.2026); Umschalten und Schalter noch ungeprüft.
-
 ## Optional – Spotify-Login
 Spotify-Playlists, gespeicherte Alben und Suche direkt in Bernos (Handy und Uhr). Lokal über Sonos
 lässt sich Spotify nicht durchsuchen; geplant ist die offizielle Spotify-Schnittstelle zum

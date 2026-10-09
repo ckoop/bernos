@@ -51,8 +51,7 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
 - `SoapClient` – SOAP über HTTP an `http://<ip>:1400`; UPnP-Fehlercodes landen in `SonosException.upnpErrorCode`.
 - `SonosPlayerClient` – einzelne Befehle (AVTransport, RenderingControl, GroupRenderingControl,
   ZoneGroupTopology): Play/Pause/Next/Previous, Position/Metadaten, Gruppen- und Raumlautstärke,
-  `joinGroup` (`x-rincon:`), `leaveGroup`, `delegateCoordination`, `zoneGroups`, Soundbar:
-  `switchToTv` (`x-sonos-htastream:<UUID>:spdif`), `eq`/`setEq` (`NightMode`, `DialogLevel`).
+  `joinGroup` (`x-rincon:`), `leaveGroup`, `delegateCoordination`, `zoneGroups`.
 - `Parsers` – DIDL-Lite (Titel, Künstler, Album, Cover; Radio über `streamContent`), Dauer,
   Quelle aus `CurrentURIMetaData` (Sendername und -logo; TuneIn liefert das Logo nur dort),
   `ZoneGroupState` (unsichtbare Mitglieder und Bridges werden ausgeblendet).
@@ -135,12 +134,8 @@ Signatur). minSdk 26 (Handy) bzw. 30 (Uhr), compile/targetSdk 36. Versionen in `
   `Level`/`PowerSource`); `startOverview()`/`stopOverview()` fragt alle 10 s ab (Akku jede Minute),
   solange die Handy-App sichtbar ist, sonst bei `refresh()` (Herzschlag der Uhr). Schlaftimer über
   `ConfigureSleepTimer`/`GetRemainingSleepTimerDuration`. Protokoll Version 5.
-- Soundbar ✅ (0.4.14, an echten Geräten nur das Lesen geprüft): Beim Nutzer Beam im Wohnzimmer mit
-  zwei Play:1 als Rücklautsprecher, dazu ein Roam. Erkennung `SonosDevice.isHomeTheater`
-  (`HdmiCecAvailable="1"` oder `<UUID>:LF,RF` in `HTSatChanMapSet`), `ZoneGroup.homeTheater`,
-  `NowPlaying.homeTheater` (`HomeTheaterState`). TV läuft = `CurrentURI` beginnt mit
-  `x-sonos-htastream:` → Titel „Fernseher“ (`SonosController.TV_TITLE`). EQ-Änderungen aus der
-  Sonos-App kommen nur per Polling (kein RenderingControl-Abo der Soundbar). Protokoll Version 7.
+- Soundbar-Funktionen (TV-Ton, Nachtmodus, Sprachverbesserung für die Beam) in 0.4.14 gebaut und
+  in 0.4.15 auf Wunsch des Nutzers wieder entfernt („hilft mir nicht“). Nicht erneut vorschlagen.
 - Phase 4 ✅ Sonos-Favoriten (07.10.2026, Version 0.4.3): Browse `FV:2`, Sender direkt,
   Playlists/Alben über die Warteschlange – beides an echten Geräten bestätigt (TuneIn-Sender,
   Spotify-Playlist). Handy: Reihe "Favoriten"; Uhr (seit 0.4.9): Stern oben mittig, Raumknopf (bis 150 dp)

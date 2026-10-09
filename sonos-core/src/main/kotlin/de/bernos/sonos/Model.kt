@@ -6,8 +6,6 @@ data class SonosDevice(
     val roomName: String,
     val host: String,
     val port: Int = DEFAULT_PORT,
-    /** Soundbar am Fernseher (Arc, Beam, Ray …): hat einen TV-Eingang, Nachtmodus und Sprachverbesserung. */
-    val isHomeTheater: Boolean = false,
 ) {
     val baseUrl: String get() = "http://$host:$port"
 
@@ -30,9 +28,6 @@ data class ZoneGroup(
             val others = members.filter { it.uuid != coordinator.uuid }.map { it.roomName }
             return if (others.isEmpty()) coordinator.roomName else "${coordinator.roomName} + ${others.joinToString(" + ")}"
         }
-
-    /** Die Soundbar der Gruppe, falls eine dabei ist. */
-    val homeTheater: SonosDevice? get() = members.firstOrNull { it.isHomeTheater }
 }
 
 enum class TransportState {
@@ -108,17 +103,6 @@ data class SourceInfo(
     val albumArtUrl: String?,
 )
 
-/** Fernseh-Funktionen der Soundbar einer Gruppe. */
-data class HomeTheaterState(
-    /** UUID der Soundbar. */
-    val deviceUuid: String,
-    /** Die Gruppe spielt gerade den Ton des Fernsehers. */
-    val tvActive: Boolean,
-    /** `null`, wenn unbekannt (Abfrage fehlgeschlagen). */
-    val nightMode: Boolean?,
-    val speechEnhancement: Boolean?,
-)
-
 /** Momentaufnahme dessen, was eine Gruppe gerade abspielt. */
 data class NowPlaying(
     val groupId: String,
@@ -134,8 +118,6 @@ data class NowPlaying(
     val memberVolumes: Map<String, Int> = emptyMap(),
     /** Restzeit des Schlaftimers; `null`, wenn keiner läuft. */
     val sleepTimerRemainingMs: Long? = null,
-    /** Nur bei Gruppen mit Soundbar. */
-    val homeTheater: HomeTheaterState? = null,
 ) {
     val isPlaying: Boolean get() = transportState == TransportState.PLAYING
 

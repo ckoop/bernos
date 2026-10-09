@@ -29,9 +29,6 @@ class MainActivity : ComponentActivity() {
             override fun setSleepTimer(minutes: Int) = phone.send(WatchCommand.SetSleepTimer(minutes))
             override fun moveTo(roomUuid: String) = phone.send(WatchCommand.MoveTo(roomUuid))
             override fun playFavorite(favoriteId: String) = phone.send(WatchCommand.PlayFavorite(favoriteId))
-            override fun switchToTv() = phone.send(WatchCommand.SwitchToTv)
-            override fun setNightMode(enabled: Boolean) = phone.send(WatchCommand.SetNightMode(enabled))
-            override fun setSpeechEnhancement(enabled: Boolean) = phone.send(WatchCommand.SetSpeechEnhancement(enabled))
             override fun refresh() = phone.send(WatchCommand.Refresh)
             override fun reconnect() = phone.send(WatchCommand.Hello)
         }

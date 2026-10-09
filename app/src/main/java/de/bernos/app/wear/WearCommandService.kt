@@ -39,9 +39,6 @@ class WearCommandService : WearableListenerService() {
             is WatchCommand.SetSleepTimer -> controller.setSleepTimer(command.minutes.takeIf { it > 0 })
             is WatchCommand.MoveTo -> controller.movePlaybackTo(command.roomUuid)
             is WatchCommand.PlayFavorite -> controller.playFavorite(command.favoriteId)
-            WatchCommand.SwitchToTv -> controller.switchToTv()
-            is WatchCommand.SetNightMode -> controller.setNightMode(command.enabled)
-            is WatchCommand.SetSpeechEnhancement -> controller.setSpeechEnhancement(command.enabled)
         }
     }
 
